@@ -91,6 +91,29 @@ operation, they may not necessarily be a good idea =D!
     # }
     ```
 
+4. Get newtype inner `Field`.
+
+    This works for structs with unnamed fields or unit structs.
+
+    ```rust,edition2018
+    use proc_macro_roids::DeriveInputNewtypeExt;
+    use syn::{parse_quote, DeriveInput, Type};
+
+    # fn main() {
+    // This may be parsed from the proc macro token stream.
+    let mut ast: DeriveInput = parse_quote! {
+        struct Newtype(u32);
+    };
+
+    // Get the inner field.
+    let inner_field = ast.inner_type_mut();
+
+    // That's it!
+    let expected_type: Type = Type::Path(parse_quote!(u32));
+    assert_eq!(expected_type, inner_field.ty);
+    # }
+    ```
+
 ## License
 
 Licensed under either of

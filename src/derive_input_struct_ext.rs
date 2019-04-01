@@ -2,46 +2,46 @@ use syn::{Data, DataStruct, DeriveInput, Fields, FieldsNamed};
 
 /// Functions to make it ergonomic to work with `struct` ASTs.
 pub trait DeriveInputStructExt {
-    /// Returns a reference to the data_struct of a struct's ast.
+    /// Returns a reference to the data_struct of a struct's AST.
     ///
     /// # Panics
     ///
-    /// Panics if the ast is not for a struct.
+    /// Panics if the AST is not for a struct.
     fn data_struct(&self) -> &DataStruct;
 
-    /// Returns a mutable reference to the data_struct of a struct's ast.
+    /// Returns a mutable reference to the data_struct of a struct's AST.
     ///
     /// # Panics
     ///
-    /// Panics if the ast is not for a struct.
+    /// Panics if the AST is not for a struct.
     fn data_struct_mut(&mut self) -> &mut DataStruct;
 
-    /// Returns a reference to the fields of a struct's ast.
+    /// Returns a reference to the fields of a struct's AST.
     ///
     /// # Panics
     ///
-    /// Panics if the ast is not for a struct.
+    /// Panics if the AST is not for a struct.
     fn fields(&self) -> &Fields;
 
-    /// Returns a mutable reference to the fields of a struct's ast.
+    /// Returns a mutable reference to the fields of a struct's AST.
     ///
     /// # Panics
     ///
-    /// Panics if the ast is not for a struct.
+    /// Panics if the AST is not for a struct.
     fn fields_mut(&mut self) -> &mut Fields;
 
-    /// Returns a mutable reference to the named fields of a struct's ast.
+    /// Returns a mutable reference to the named fields of a struct's AST.
     ///
     /// # Panics
     ///
-    /// Panics if the ast is not for a struct with named fields.
+    /// Panics if the AST is not for a struct with named fields.
     fn fields_named(&self) -> &FieldsNamed;
 
-    /// Returns a mutable reference to the named fields of a struct's ast.
+    /// Returns a mutable reference to the named fields of a struct's AST.
     ///
     /// # Panics
     ///
-    /// Panics if the ast is not for a struct with named fields.
+    /// Panics if the AST is not for a struct with named fields.
     fn fields_named_mut(&mut self) -> &mut FieldsNamed;
 }
 

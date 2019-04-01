@@ -87,9 +87,33 @@
 //!     assert_eq!(ast_expected, ast);
 //!     # }
 //!     ```
+//!
+//! 4. Get newtype inner `Field`.
+//!
+//!     This works for structs with unnamed fields or unit structs.
+//!
+//!     ```rust,edition2018
+//!     use proc_macro_roids::DeriveInputNewtypeExt;
+//!     use syn::{parse_quote, DeriveInput, Type};
+//!
+//!     # fn main() {
+//!     // This may be parsed from the proc macro token stream.
+//!     let mut ast: DeriveInput = parse_quote! {
+//!         struct Newtype(u32);
+//!     };
+//!
+//!     // Get the inner field.
+//!     let inner_field = ast.inner_type_mut();
+//!
+//!     // That's it!
+//!     let expected_type: Type = Type::Path(parse_quote!(u32));
+//!     assert_eq!(expected_type, inner_field.ty);
+//!     # }
+//!     ```
 
 pub use crate::{
     derive_input_derive_ext::DeriveInputDeriveExt,
+    derive_input_newtype_ext::DeriveInputNewtypeExt,
     derive_input_struct_ext::DeriveInputStructExt,
     fields_named_append::FieldsNamedAppend,
     fields_unnamed_append::FieldsUnnamedAppend,
@@ -97,6 +121,7 @@ pub use crate::{
 };
 
 mod derive_input_derive_ext;
+mod derive_input_newtype_ext;
 mod derive_input_struct_ext;
 mod fields_named_append;
 mod fields_unnamed_append;
