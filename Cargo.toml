@@ -18,5 +18,6 @@ syn = { version = "0.15.29", features = ["extra-traits", "visit"] }
 pretty_assertions = "0.6.1"
 
 [badges]
-appveyor = { repository = "azriel91/proc_macro_roids", service = "github" }
+appveyor = { repository = "azriel91/proc_macro_roids" }
 travis-ci = { repository = "azriel91/proc_macro_roids" }
+codecov = { repository = "azriel91/proc_macro_roids" }

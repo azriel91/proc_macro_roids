@@ -1,6 +1,7 @@
 [![Crates.io](https://img.shields.io/crates/v/proc_macro_roids.svg)](https://crates.io/crates/proc_macro_roids)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/azriel91/proc_macro_roids?branch=master&svg=true)](https://ci.appveyor.com/project/azriel91/proc_macro_roids/branch/master)
 [![Build Status](https://travis-ci.org/azriel91/proc_macro_roids.svg?branch=master)](https://travis-ci.org/azriel91/proc_macro_roids)
+[![Coverage Status](https://codecov.io/gh/azriel91/proc_macro_roids/branch/master/graph/badge.svg)](https://codecov.io/gh/azriel91/proc_macro_roids)
 
 # Proc Macro Roids
 
