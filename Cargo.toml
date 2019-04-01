@@ -1,0 +1,22 @@
+[package]
+name = "proc_macro_roids"
+version = "0.1.0"
+authors = ["Azriel Hoh <azriel91@gmail.com>"]
+description = "Traits and functions to make writing proc macros more ergonomic."
+repository = "https://github.com/azriel91/proc_macro_roids"
+edition = "2018"
+readme = "README.md"
+keywords = ["proc_macro", "macros"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+proc-macro2 = "0.4.27"
+quote = "0.6.11"
+syn = { version = "0.15.29", features = ["extra-traits", "visit"] }
+
+[dev-dependencies]
+pretty_assertions = "0.6.1"
+
+[badges]
+appveyor = { repository = "azriel91/proc_macro_roids", service = "github" }
+travis-ci = { repository = "azriel91/proc_macro_roids" }
