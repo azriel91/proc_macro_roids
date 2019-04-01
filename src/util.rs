@@ -13,7 +13,7 @@ pub fn nested_meta_to_ident(nested_meta: &NestedMeta) -> Option<Ident> {
     }
 }
 
-/// Returns whether the `MetaList` contains a `Meta::Word` with the given ident.
+/// Returns whether the `MetaList` contains the specified `NestedMeta`.
 ///
 /// This can be used to check if a `#[derive(..)]` contains `SomeDerive`.
 ///
