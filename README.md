@@ -15,103 +15,147 @@ operation, they may not necessarily be a good idea =D!
 
    This works for function-like or attribute proc macros.
 
-    ```rust,edition2018
+    ```rust,ignore
+    extern crate proc_macro;
+
+    use proc_macro::TokenStream;
     use proc_macro_roids::DeriveInputDeriveExt;
-    use syn::{parse_quote, DeriveInput};
+    use quote::quote;
+    use syn::{parse_macro_input, parse_quote, DeriveInput};
 
-    # fn main() {
-    // This may be parsed from the proc macro token stream.
-    let mut ast: DeriveInput = parse_quote! {
-        #[derive(Debug)]
-        struct Struct;
-    };
+    #[proc_macro_attribute]
+    pub fn copy(_args: TokenStream, item: TokenStream) -> TokenStream {
+        // Example input:
+        //
+        // #[derive(Debug)]
+        // struct Struct;
+        let mut ast = parse_macro_input!(item as DeriveInput);
 
-    // Append the derives.
-    let derives = parse_quote!(Clone, Copy);
-    ast.append_derives(derives);
+        // Append the derives.
+        let derives = parse_quote!(Clone, Copy);
+        ast.append_derives(derives);
 
-    // That's it!
-    let ast_expected: DeriveInput = parse_quote! {
-        #[derive(Debug, Clone, Copy)]
-        struct Struct;
-    };
-    assert_eq!(ast_expected, ast);
-    # }
+        // Example output:
+        //
+        // #[derive(Debug, Clone, Copy)]
+        // struct Struct;
+        TokenStream::from(quote! { #ast })
+    }
     ```
 
 2. Append named fields.
 
     This works for structs with named fields or unit structs.
 
-    ```rust,edition2018
+    ```rust,ignore
+    extern crate proc_macro;
+
+    use proc_macro::TokenStream;
     use proc_macro_roids::FieldsNamedAppend;
-    use syn::{parse_quote, DeriveInput, FieldsNamed};
+    use quote::quote;
+    use syn::{parse_macro_input, parse_quote, DeriveInput, FieldsNamed};
 
-    # fn main() {
-    // This may be parsed from the proc macro token stream.
-    let mut ast: DeriveInput = parse_quote! {
-        struct StructNamed { a: u32, b: i32 }
-    };
+    /// Example usage:
+    ///
+    /// ```rust
+    /// use macro_crate::append_cd;
+    ///
+    /// #[append_cd]
+    /// struct StructNamed { a: u32, b: i32 }
+    /// ```
+    #[proc_macro_attribute]
+    pub fn append_cd(_args: TokenStream, item: TokenStream) -> TokenStream {
+        // Example input:
+        //
+        // struct StructNamed { a: u32, b: i32 }
+        let mut ast = parse_macro_input!(item as DeriveInput);
 
-    // Append the fields.
-    let fields_additional: FieldsNamed = parse_quote!({ c: i64, d: usize });
-    ast.append(fields_additional);
+        // Append the fields.
+        let fields_additional: FieldsNamed = parse_quote!({ c: i64, d: usize });
+        ast.append(fields_additional);
 
-    // That's it!
-    let ast_expected: DeriveInput = parse_quote! {
-        struct StructNamed { a: u32, b: i32, c: i64, d: usize }
-    };
-    assert_eq!(ast_expected, ast);
-    # }
+        // Example output:
+        //
+        // struct StructNamed { a: u32, b: i32, c: i64, d: usize }
+        TokenStream::from(quote! { #ast })
+    }
     ```
 
 3. Append unnamed fields (tuples).
 
     This works for structs with unnamed fields or unit structs.
 
-    ```rust,edition2018
+    ```rust,ignore
+    extern crate proc_macro;
+
+    use proc_macro::TokenStream;
     use proc_macro_roids::FieldsUnnamedAppend;
-    use syn::{parse_quote, DeriveInput, FieldsUnnamed};
+    use quote::quote;
+    use syn::{parse_macro_input, parse_quote, DeriveInput, FieldsUnnamed};
 
-    # fn main() {
-    // This may be parsed from the proc macro token stream.
-    let mut ast: DeriveInput = parse_quote! {
-        struct StructUnit;
-    };
+    /// Example usage:
+    ///
+    /// ```rust
+    /// use macro_crate::append_i64_usize;
+    ///
+    /// #[append_i64_usize]
+    /// struct StructNamed { a: u32, b: i32 }
+    /// ```
+    #[proc_macro_attribute]
+    pub fn append_i64_usize(_args: TokenStream, item: TokenStream) -> TokenStream {
+        // Example input:
+        //
+        // struct StructUnit;
+        let mut ast = parse_macro_input!(item as DeriveInput);
 
-    // Append the fields.
-    let fields_additional: FieldsUnnamed = parse_quote!((i64, usize));
-    ast.append(fields_additional);
+        // Append the fields.
+        let fields_additional: FieldsUnnamed = parse_quote!((i64, usize));
+        ast.append(fields_additional);
 
-    // That's it!
-    let ast_expected: DeriveInput = parse_quote! {
-        struct StructUnit(i64, usize);
-    };
-    assert_eq!(ast_expected, ast);
-    # }
+        // Example output:
+        //
+        // struct StructUnit(i64, usize);
+        TokenStream::from(quote! { #ast })
+    }
     ```
 
 4. Get newtype inner `Field`.
 
     This works for structs with unnamed fields or unit structs.
 
-    ```rust,edition2018
+    ```rust,ignore
+    extern crate proc_macro;
+
+    use proc_macro::TokenStream;
     use proc_macro_roids::DeriveInputNewtypeExt;
-    use syn::{parse_quote, DeriveInput, Type};
+    use quote::quote;
+    use syn::{parse_macro_input, parse_quote, DeriveInput, Type};
 
-    # fn main() {
-    // This may be parsed from the proc macro token stream.
-    let mut ast: DeriveInput = parse_quote! {
-        struct Newtype(u32);
-    };
+    #[proc_macro_derive(Deref)]
+    pub fn derive_deref(item: TokenStream) -> TokenStream {
+        // Example input:
+        //
+        // #[derive(Deref)]
+        // struct Newtype(u32);
+        let mut ast = parse_macro_input!(item as DeriveInput);
 
-    // Get the inner field.
-    let inner_field = ast.inner_type_mut();
+        // Get the inner field.
+        let inner_field = ast.inner_type();
 
-    // That's it!
-    let expected_type: Type = Type::Path(parse_quote!(u32));
-    assert_eq!(expected_type, inner_field.ty);
-    # }
+        // Implement `Deref`
+        let type_name = &ast.ident;
+        let token_stream_2 = quote! {
+            #ast
+
+            impl std::ops::Deref for #type_name {
+                type Target = #inner_type;
+                fn deref(&self) -> &Self::Target {
+                    &self.0
+                }
+            }
+        }
+        TokenStream::from(token_stream_2)
+    }
     ```
 
 ## License
