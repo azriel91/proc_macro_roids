@@ -72,7 +72,7 @@ operation, they may not necessarily be a good idea =D!
 
         // Append the fields.
         let fields_additional: FieldsNamed = parse_quote!({ c: i64, d: usize });
-        ast.append(fields_additional);
+        ast.append_named(fields_additional);
 
         // Example output:
         //
@@ -99,7 +99,7 @@ operation, they may not necessarily be a good idea =D!
     /// use macro_crate::append_i64_usize;
     ///
     /// #[append_i64_usize]
-    /// struct StructNamed { a: u32, b: i32 }
+    /// struct StructUnit;
     /// ```
     #[proc_macro_attribute]
     pub fn append_i64_usize(_args: TokenStream, item: TokenStream) -> TokenStream {
@@ -110,7 +110,7 @@ operation, they may not necessarily be a good idea =D!
 
         // Append the fields.
         let fields_additional: FieldsUnnamed = parse_quote!((i64, usize));
-        ast.append(fields_additional);
+        ast.append_unnamed(fields_additional);
 
         // Example output:
         //
