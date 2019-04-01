@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.0 (2019-04-02)
+
+* ***Breaking:*** `FieldsNamed#append` is renamed to `FieldsNamed#append_named`.
+* ***Breaking:*** `FieldsUnnamed#append` is renamed to `FieldsUnnamed#append_unnamed`.
+
 ## 0.1.0 (2019-04-01)
 
 * `DeriveInputDeriveExt` provides function to append `derive`s.
