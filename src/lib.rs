@@ -154,6 +154,24 @@
 //!         TokenStream::from(token_stream_2)
 //!     }
 //!     ```
+//!
+//! 5. `Ident` concatenation.
+//!
+//!     ```rust,edition2018
+//!     use proc_macro_roids::IdentExt;
+//!     use proc_macro2::Span;
+//!     use syn::Ident;
+//!
+//!     # fn main() {
+//!     let one = Ident::new("One", Span::call_site());
+//!     assert_eq!(Ident::new("OneSuffix", Span::call_site()), one.append("Suffix"));
+//!     assert_eq!(Ident::new("PrefixOne", Span::call_site()), one.prepend("Prefix"));
+//!
+//!     let two = Ident::new("Two", Span::call_site());
+//!     assert_eq!(Ident::new("OneTwo", Span::call_site()), one.append(&two));
+//!     assert_eq!(Ident::new("TwoOne", Span::call_site()), one.prepend(&two));
+//!     # }
+//!     ```
 
 pub use crate::{
     derive_input_derive_ext::DeriveInputDeriveExt,
@@ -161,6 +179,7 @@ pub use crate::{
     derive_input_struct_ext::DeriveInputStructExt,
     fields_named_append::FieldsNamedAppend,
     fields_unnamed_append::FieldsUnnamedAppend,
+    ident_ext::IdentExt,
     util::{ident_concat, meta_list_contains, nested_meta_to_ident},
 };
 
@@ -169,4 +188,5 @@ mod derive_input_newtype_ext;
 mod derive_input_struct_ext;
 mod fields_named_append;
 mod fields_unnamed_append;
+mod ident_ext;
 mod util;
