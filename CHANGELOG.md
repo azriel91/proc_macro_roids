@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.2.1 (unreleased)
+## 0.2.1 (2019-04-10)
 
 * `IdentExt#append` and `#prepend` creates new `Ident`s via concatenation.
 * Added the following methods to `DeriveInputStructExt`:
