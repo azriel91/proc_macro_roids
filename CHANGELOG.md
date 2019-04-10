@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.1 (unreleased)
+
+* `IdentExt#append` and `#prepend` creates new `Ident`s via concatenation.
+* Added the following methods to `DeriveInputStructExt`:
+
+    - `is_unit`
+    - `is_named`
+    - `is_tuple`
+    - `assert_fields_unit`
+    - `assert_fields_named`
+    - `assert_fields_unnamed`
+
+* Added `is_newtype` to `DeriveInputNewtypeExt`.
+
 ## 0.2.0 (2019-04-02)
 
 * ***Breaking:*** `FieldsNamed#append` is renamed to `FieldsNamed#append_named`.
