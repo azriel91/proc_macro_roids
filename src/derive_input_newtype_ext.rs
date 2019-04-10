@@ -24,6 +24,9 @@ pub trait DeriveInputNewtypeExt {
     ///
     /// Panics if the AST is not for a newtype struct.
     fn inner_type_mut(&mut self) -> &mut Field;
+
+    /// Returns true if the AST is for a struct with **exactly one** unnamed field.
+    fn is_newtype(&self) -> bool;
 }
 
 impl DeriveInputNewtypeExt for DeriveInput {
@@ -64,6 +67,18 @@ impl DeriveInputNewtypeExt for DeriveInput {
             }
         } else {
             panic!(MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT)
+        }
+    }
+
+    fn is_newtype(&self) -> bool {
+        if let Data::Struct(DataStruct {
+            fields: Fields::Unnamed(fields_unnamed),
+            ..
+        }) = &self.data
+        {
+            fields_unnamed.unnamed.len() == 1
+        } else {
+            false
         }
     }
 }
@@ -144,5 +159,41 @@ mod tests {
         };
 
         ast.inner_type_mut();
+    }
+
+    #[test]
+    fn is_newtype_returns_true_when_fields_unnamed_and_exactly_one() {
+        let ast: DeriveInput = parse_quote! {
+            struct Tuple(u32);
+        };
+
+        assert!(ast.is_newtype());
+    }
+
+    #[test]
+    fn is_newtype_returns_false_when_fields_unnamed_and_zero() {
+        let ast: DeriveInput = parse_quote! {
+            struct Tuple();
+        };
+
+        assert!(!ast.is_newtype());
+    }
+
+    #[test]
+    fn is_newtype_returns_false_when_fields_unnamed_and_more_than_one() {
+        let ast: DeriveInput = parse_quote! {
+            struct Tuple(u32, u32);
+        };
+
+        assert!(!ast.is_newtype());
+    }
+
+    #[test]
+    fn is_newtype_returns_false_when_fields_not_tuple() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unit;
+        };
+
+        assert!(!ast.is_newtype());
     }
 }
