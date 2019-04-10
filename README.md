@@ -159,6 +159,24 @@ operation, they may not necessarily be a good idea =D!
     }
     ```
 
+5. `Ident` concatenation.
+
+    ```rust,edition2018
+    use proc_macro_roids::IdentExt;
+    use proc_macro2::Span;
+    use syn::Ident;
+
+    # fn main() {
+    let one = Ident::new("One", Span::call_site());
+    assert_eq!(Ident::new("OneSuffix", Span::call_site()), one.append("Suffix"));
+    assert_eq!(Ident::new("PrefixOne", Span::call_site()), one.prepend("Prefix"));
+
+    let two = Ident::new("Two", Span::call_site());
+    assert_eq!(Ident::new("OneTwo", Span::call_site()), one.append(&two));
+    assert_eq!(Ident::new("TwoOne", Span::call_site()), one.prepend(&two));
+    # }
+    ```
+
 ## License
 
 Licensed under either of
