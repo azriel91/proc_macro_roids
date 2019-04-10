@@ -43,6 +43,24 @@ pub trait DeriveInputStructExt {
     ///
     /// Panics if the AST is not for a struct with named fields.
     fn fields_named_mut(&mut self) -> &mut FieldsNamed;
+
+    /// Returns true if the AST is for a unit struct.
+    fn is_unit(&self) -> bool;
+
+    /// Returns true if the AST is for a struct with named fields.
+    fn is_named(&self) -> bool;
+
+    /// Returns true if the AST is for a struct with unnamed fields.
+    fn is_tuple(&self) -> bool;
+
+    /// Panics if the AST is not for a unit struct.
+    fn assert_fields_unit(&self);
+
+    /// Panics if the AST is not for a struct with named fields.
+    fn assert_fields_named(&self);
+
+    /// Panics if the AST is not for a struct with unnamed fields.
+    fn assert_fields_unnamed(&self);
 }
 
 impl DeriveInputStructExt for DeriveInput {
@@ -99,6 +117,60 @@ impl DeriveInputStructExt for DeriveInput {
             fields_named
         } else {
             panic!("This macro must be used on a struct with named fields.");
+        }
+    }
+
+    fn is_unit(&self) -> bool {
+        if let Data::Struct(DataStruct {
+            fields: Fields::Unit,
+            ..
+        }) = &self.data
+        {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn is_named(&self) -> bool {
+        if let Data::Struct(DataStruct {
+            fields: Fields::Named(..),
+            ..
+        }) = &self.data
+        {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn is_tuple(&self) -> bool {
+        if let Data::Struct(DataStruct {
+            fields: Fields::Unnamed(..),
+            ..
+        }) = &self.data
+        {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn assert_fields_unit(&self) {
+        if !self.is_unit() {
+            panic!("This macro must be used on a unit struct.");
+        }
+    }
+
+    fn assert_fields_named(&self) {
+        if !self.is_named() {
+            panic!("This macro must be used on a struct with named fields.");
+        }
+    }
+
+    fn assert_fields_unnamed(&self) {
+        if !self.is_tuple() {
+            panic!("This macro must be used on a struct with unnamed fields.");
         }
     }
 }
@@ -295,5 +367,116 @@ mod tests {
         };
 
         ast.fields_named_mut();
+    }
+
+    #[test]
+    fn is_unit_returns_true_when_fields_unit() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unit;
+        };
+
+        assert!(ast.is_unit());
+    }
+
+    #[test]
+    fn is_unit_returns_false_when_fields_not_unit() {
+        let ast: DeriveInput = parse_quote! {
+            struct Named {}
+        };
+
+        assert!(!ast.is_unit());
+    }
+
+    #[test]
+    fn is_named_returns_true_when_fields_named() {
+        let ast: DeriveInput = parse_quote! {
+            struct Named {}
+        };
+
+        assert!(ast.is_named());
+    }
+
+    #[test]
+    fn is_named_returns_false_when_fields_not_named() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unit;
+        };
+
+        assert!(!ast.is_named());
+    }
+
+    #[test]
+    fn is_tuple_returns_true_when_fields_unnamed() {
+        let ast: DeriveInput = parse_quote! {
+            struct Tuple(u32);
+        };
+
+        assert!(ast.is_tuple());
+    }
+
+    #[test]
+    fn is_tuple_returns_false_when_fields_not_unnamed() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unit;
+        };
+
+        assert!(!ast.is_tuple());
+    }
+
+    #[test]
+    fn assert_fields_unit_does_not_panic_when_fields_unit() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unit;
+        };
+
+        ast.assert_fields_unit();
+    }
+
+    #[test]
+    #[should_panic(expected = "This macro must be used on a unit struct.")]
+    fn assert_fields_unit_panics_when_fields_not_unit() {
+        let ast: DeriveInput = parse_quote! {
+            struct Named {}
+        };
+
+        ast.assert_fields_unit();
+    }
+
+    #[test]
+    fn assert_fields_named_does_not_panic_when_fields_named() {
+        let ast: DeriveInput = parse_quote! {
+            struct Named {}
+        };
+
+        ast.assert_fields_named();
+    }
+
+    #[test]
+    #[should_panic(expected = "This macro must be used on a struct with named fields.")]
+    fn assert_fields_named_panics_when_fields_not_named() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unit;
+        };
+
+        ast.assert_fields_named();
+    }
+
+    #[test]
+    fn assert_fields_unnamed_does_not_panic_when_fields_unnamed() {
+        let ast: DeriveInput = parse_quote! {
+            struct Unnamed(u32);
+        };
+
+        ast.assert_fields_unnamed();
+    }
+
+    #[test]
+    #[should_panic(expected = "This macro must be used on a struct with unnamed fields.")]
+    fn assert_fields_unnamed_panics_when_fields_not_unnamed() {
+        let ast: DeriveInput = parse_quote! {
+            struct Named {}
+        };
+
+        ast.assert_fields_unnamed();
     }
 }
