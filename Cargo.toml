@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro_roids"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
 description = "Traits and functions to make writing proc macros more ergonomic."
 repository = "https://github.com/azriel91/proc_macro_roids"
