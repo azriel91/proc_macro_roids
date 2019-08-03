@@ -1,8 +1,16 @@
 # Changelog
 
+## 0.3.0 (2019-08-04)
+
+* `FieldExt` provides methods to work with `Field`s:
+
+    - `contains_tag`
+    - `is_phantom_data`
+    - `type_name`
+
 ## 0.2.1 (2019-04-10)
 
-* `IdentExt#append` and `#prepend` creates new `Ident`s via concatenation.
+* `IdentExt::append` and `IdentExt::prepend` create new `Ident`s via concatenation.
 * Added the following methods to `DeriveInputStructExt`:
 
     - `is_unit`
@@ -16,8 +24,8 @@
 
 ## 0.2.0 (2019-04-02)
 
-* ***Breaking:*** `FieldsNamed#append` is renamed to `FieldsNamed#append_named`.
-* ***Breaking:*** `FieldsUnnamed#append` is renamed to `FieldsUnnamed#append_unnamed`.
+* ***Breaking:*** `FieldsNamed::append` is renamed to `FieldsNamed::append_named`.
+* ***Breaking:*** `FieldsUnnamed::append` is renamed to `FieldsUnnamed::append_unnamed`.
 
 ## 0.1.0 (2019-04-01)
 
