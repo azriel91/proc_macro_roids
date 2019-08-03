@@ -177,6 +177,43 @@ operation, they may not necessarily be a good idea =D!
     # }
     ```
 
+6. Accessing struct fields.
+
+    ```rust,edition2018
+    use proc_macro_roids::DeriveInputStructExt;
+    use syn::{parse_quote, DeriveInput, Fields};
+
+    # fn main() {
+    let ast: DeriveInput = parse_quote! {
+        struct Named {}
+    };
+
+    if let Fields::Named(..) = ast.fields() {
+        // do something
+    }
+    # }
+    ```
+
+7. Inspecting `Field`s.
+
+    ```rust,edition2018
+    use proc_macro_roids::FieldExt;
+    use syn::{parse_quote, Fields, FieldsNamed};
+
+    # fn main() {
+    let fields_named: FieldsNamed = parse_quote! {{
+        #[my_derive(tag_name)]
+        pub name: PhantomData<T>,
+    }};
+    let fields = Fields::from(fields_named);
+    let field = fields.iter().next().expect("Expected field to exist.");
+
+    assert_eq!(field.type_name(), "PhantomData");
+    assert!(field.is_phantom_data());
+    assert!(field.contains_tag("my_derive", "tag_name"));
+    # }
+    ```
+
 ## License
 
 Licensed under either of
