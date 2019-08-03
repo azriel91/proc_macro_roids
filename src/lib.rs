@@ -172,11 +172,52 @@
 //!     assert_eq!(Ident::new("TwoOne", Span::call_site()), one.prepend(&two));
 //!     # }
 //!     ```
+//!
+//! 6. Accessing struct fields.
+//!
+//!     ```rust,edition2018
+//!     use proc_macro_roids::DeriveInputStructExt;
+//!     use syn::{parse_quote, DeriveInput, Fields};
+//!
+//!     # fn main() {
+//!     let ast: DeriveInput = parse_quote! {
+//!         struct Named {}
+//!     };
+//!
+//!     if let Fields::Named(..) = ast.fields() {
+//!         // do something
+//!     }
+//!     # }
+//!     ```
+//!
+//! 7. Inspecting `Field`s.
+//!
+//!     ```rust,edition2018
+//!     use proc_macro_roids::FieldExt;
+//!     use syn::{parse_quote, Fields, FieldsNamed};
+//!
+//!     # fn main() {
+//!     let fields_named: FieldsNamed = parse_quote! {{
+//!         #[my_derive(tag_name)]
+//!         pub name: PhantomData<T>,
+//!     }};
+//!     let fields = Fields::from(fields_named);
+//!     let field = fields.iter().next().expect("Expected field to exist.");
+//!
+//!     assert_eq!(field.type_name(), "PhantomData");
+//!     assert!(field.is_phantom_data());
+//!     assert!(field.contains_tag("my_derive", "tag_name"));
+//!     # }
+//!     ```
+
+#[cfg(test)]
+extern crate proc_macro;
 
 pub use crate::{
     derive_input_derive_ext::DeriveInputDeriveExt,
     derive_input_newtype_ext::DeriveInputNewtypeExt,
     derive_input_struct_ext::DeriveInputStructExt,
+    field_ext::FieldExt,
     fields_named_append::FieldsNamedAppend,
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
@@ -186,6 +227,7 @@ pub use crate::{
 mod derive_input_derive_ext;
 mod derive_input_newtype_ext;
 mod derive_input_struct_ext;
+mod field_ext;
 mod fields_named_append;
 mod fields_unnamed_append;
 mod ident_ext;
