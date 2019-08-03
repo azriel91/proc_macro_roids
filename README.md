@@ -21,7 +21,7 @@ use proc_macro_roids::{DeriveInputStructExt, FieldExt, IdentExt};
 use quote::quote;
 use syn::{parse_macro_input, DeriveInput, Ident};
 
-/// Derives a `Super` implementation:
+/// Derives a `Super` enum with a variant for each struct field:
 ///
 /// ```rust,edition2018
 /// use std::marker::PhantomData;
