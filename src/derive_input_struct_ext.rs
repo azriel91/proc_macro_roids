@@ -198,7 +198,7 @@ mod tests {
         };
 
         ast.data_struct();
-    }
+    } // kcov-ignore
 
     #[test]
     fn data_struct_mut_returns_data_struct_mut() {
@@ -217,7 +217,7 @@ mod tests {
         };
 
         ast.data_struct_mut();
-    }
+    } // kcov-ignore
 
     #[test]
     fn fields_returns_unit_fields() {
@@ -237,7 +237,7 @@ mod tests {
         if let &Fields::Named(..) = ast.fields() {
             // pass
         } else {
-            panic!("Expected `fields` to return `&Fields::Named(..)")
+            panic!("Expected `fields` to return `&Fields::Named(..)") // kcov-ignore
         }
     }
 
@@ -250,7 +250,7 @@ mod tests {
         if let &Fields::Unnamed(..) = ast.fields() {
             // pass
         } else {
-            panic!("Expected `fields` to return `&Fields::Unnamed(..)")
+            panic!("Expected `fields` to return `&Fields::Unnamed(..)") // kcov-ignore
         }
     }
 
@@ -262,7 +262,7 @@ mod tests {
         };
 
         ast.fields();
-    }
+    } // kcov-ignore
 
     #[test]
     fn fields_mut_returns_unit_fields() {
@@ -282,7 +282,7 @@ mod tests {
         if let &mut Fields::Named(..) = ast.fields_mut() {
             // pass
         } else {
-            panic!("Expected `fields_mut` to return `&mut Fields::Named(..)")
+            panic!("Expected `fields_mut` to return `&mut Fields::Named(..)") // kcov-ignore
         }
     }
 
@@ -295,7 +295,7 @@ mod tests {
         if let &mut Fields::Unnamed(..) = ast.fields_mut() {
             // pass
         } else {
-            panic!("Expected `fields_mut` to return `&mut Fields::Unnamed(..)")
+            panic!("Expected `fields_mut` to return `&mut Fields::Unnamed(..)") // kcov-ignore
         }
     }
 
@@ -307,7 +307,7 @@ mod tests {
         };
 
         ast.fields_mut();
-    }
+    } // kcov-ignore
 
     #[test]
     fn fields_named_returns_named_fields() {
@@ -327,7 +327,7 @@ mod tests {
         };
 
         ast.fields_named();
-    }
+    } // kcov-ignore
 
     #[test]
     #[should_panic(expected = "This macro must be used on a struct with named fields.")]
@@ -337,7 +337,7 @@ mod tests {
         };
 
         ast.fields_named();
-    }
+    } // kcov-ignore
 
     #[test]
     fn fields_named_mut_returns_named_fields() {
@@ -357,7 +357,7 @@ mod tests {
         };
 
         ast.fields_named_mut();
-    }
+    } // kcov-ignore
 
     #[test]
     #[should_panic(expected = "This macro must be used on a struct with named fields.")]
@@ -367,7 +367,7 @@ mod tests {
         };
 
         ast.fields_named_mut();
-    }
+    } // kcov-ignore
 
     #[test]
     fn is_unit_returns_true_when_fields_unit() {
@@ -440,7 +440,7 @@ mod tests {
         };
 
         ast.assert_fields_unit();
-    }
+    } // kcov-ignore
 
     #[test]
     fn assert_fields_named_does_not_panic_when_fields_named() {
@@ -459,7 +459,7 @@ mod tests {
         };
 
         ast.assert_fields_named();
-    }
+    } // kcov-ignore
 
     #[test]
     fn assert_fields_unnamed_does_not_panic_when_fields_unnamed() {
@@ -478,5 +478,5 @@ mod tests {
         };
 
         ast.assert_fields_unnamed();
-    }
+    } // kcov-ignore
 }
