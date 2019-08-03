@@ -66,6 +66,7 @@ impl FieldExt for Field {
                 return ident;
             }
         }
+        // kcov-ignore-start
         panic!(
             "Expected {}field type to be a `Path` with a segment.",
             self.ident
@@ -73,6 +74,7 @@ impl FieldExt for Field {
                 .map(|ident| format!("`{:?}` ", ident))
                 .unwrap_or_else(|| String::from(""))
         );
+        // kcov-ignore-end
     }
 
     fn is_phantom_data(&self) -> bool {
@@ -176,7 +178,7 @@ mod tests {
 
                     assert!(
                         !field.contains_tag("my_derive", "tag_name"),
-                        assertion_message
+                        assertion_message // kcov-ignore
                     );
 
                     Ok(())
@@ -238,7 +240,7 @@ mod tests {
 
                     assert!(
                         !field.contains_tag("my_derive", "tag_name"),
-                        assertion_message
+                        assertion_message // kcov-ignore
                     );
 
                     Ok(())

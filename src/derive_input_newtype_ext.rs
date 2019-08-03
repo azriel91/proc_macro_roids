@@ -62,7 +62,9 @@ impl DeriveInputNewtypeExt for DeriveInput {
                     .iter_mut()
                     .next()
                     .expect("Expected field to exist.")
+            // kcov-ignore-start
             } else {
+                // kcov-ignore-end
                 panic!(NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD)
             }
         } else {
@@ -111,7 +113,7 @@ mod tests {
         };
 
         ast.inner_type();
-    }
+    } // kcov-ignore
 
     #[test]
     #[should_panic(expected = "Newtype struct must only have one field.\n\
@@ -123,7 +125,7 @@ mod tests {
         };
 
         ast.inner_type();
-    }
+    } // kcov-ignore
 
     #[test]
     fn inner_type_mut_returns_field() {
@@ -147,7 +149,7 @@ mod tests {
         };
 
         ast.inner_type_mut();
-    }
+    } // kcov-ignore
 
     #[test]
     #[should_panic(expected = "Newtype struct must only have one field.\n\
@@ -159,7 +161,7 @@ mod tests {
         };
 
         ast.inner_type_mut();
-    }
+    } // kcov-ignore
 
     #[test]
     fn is_newtype_returns_true_when_fields_unnamed_and_exactly_one() {
