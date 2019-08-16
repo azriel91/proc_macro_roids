@@ -4,17 +4,6 @@ use syn::{
 
 /// Functions to make it ergonomic to inspect `Field`s and their attributes.
 pub trait FieldExt {
-    /// Returns whether a field contains a given `#[namespace(tag)]` attribute.
-    ///
-    /// # Parameters
-    ///
-    /// * `namespace`: The `name()` of the first-level attribute.
-    /// * `tag`: The `name()` of the second-level attribute.
-    fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
-    where
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>;
-
     /// Returns the simple type name of a field.
     ///
     /// For example, the `PhantomData` in `std::marker::PhantomData<T>`.
@@ -28,9 +17,41 @@ pub trait FieldExt {
     /// * `use std::marker::PhantomData as GhostData;`
     /// * `use other_crate::OtherType as PhantomData;`
     fn is_phantom_data(&self) -> bool;
+
+    /// Returns whether a field contains a given `#[namespace(tag)]` attribute.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
+    where
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
 }
 
 impl FieldExt for Field {
+    fn type_name(&self) -> &Ident {
+        if let Type::Path(TypePath { path, .. }) = &self.ty {
+            if let Some(Pair::End(PathSegment { ident, .. })) = path.segments.last() {
+                return ident;
+            }
+        }
+        // kcov-ignore-start
+        panic!(
+            "Expected {}field type to be a `Path` with a segment.",
+            self.ident
+                .as_ref()
+                .map(|ident| format!("`{:?}` ", ident))
+                .unwrap_or_else(|| String::from(""))
+        );
+        // kcov-ignore-end
+    }
+
+    fn is_phantom_data(&self) -> bool {
+        self.type_name() == "PhantomData"
+    }
+
     fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
     where
         Ident: PartialEq<NS>,
@@ -58,27 +79,6 @@ impl FieldExt for Field {
                     false
                 }
             })
-    }
-
-    fn type_name(&self) -> &Ident {
-        if let Type::Path(TypePath { path, .. }) = &self.ty {
-            if let Some(Pair::End(PathSegment { ident, .. })) = path.segments.last() {
-                return ident;
-            }
-        }
-        // kcov-ignore-start
-        panic!(
-            "Expected {}field type to be a `Path` with a segment.",
-            self.ident
-                .as_ref()
-                .map(|ident| format!("`{:?}` ", ident))
-                .unwrap_or_else(|| String::from(""))
-        );
-        // kcov-ignore-end
-    }
-
-    fn is_phantom_data(&self) -> bool {
-        self.type_name() == "PhantomData"
     }
 }
 
