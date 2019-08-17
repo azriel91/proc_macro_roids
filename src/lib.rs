@@ -80,7 +80,7 @@
 //!     extern crate proc_macro;
 //!
 //!     use proc_macro::TokenStream;
-//!     use proc_macro_roids::DeriveInputDeriveExt;
+//!     use proc_macro_roids::DeriveInputExt;
 //!     use quote::quote;
 //!     use syn::{parse_macro_input, parse_quote, DeriveInput};
 //!
@@ -278,7 +278,7 @@
 extern crate proc_macro;
 
 pub use crate::{
-    derive_input_derive_ext::DeriveInputDeriveExt,
+    derive_input_ext::DeriveInputExt,
     derive_input_newtype_ext::DeriveInputNewtypeExt,
     derive_input_struct_ext::DeriveInputStructExt,
     field_ext::FieldExt,
@@ -288,7 +288,7 @@ pub use crate::{
     util::{ident_concat, meta_list_contains, nested_meta_to_ident, tag_parameter, tag_parameters},
 };
 
-mod derive_input_derive_ext;
+mod derive_input_ext;
 mod derive_input_newtype_ext;
 mod derive_input_struct_ext;
 mod field_ext;

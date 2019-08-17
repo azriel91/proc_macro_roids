@@ -3,7 +3,7 @@ use syn::{parse_quote, punctuated::Punctuated, Attribute, DeriveInput, Meta, Nes
 use crate::{meta_list_contains, nested_meta_to_ident};
 
 /// Functions to make it ergonomic to work with `struct` ASTs.
-pub trait DeriveInputDeriveExt {
+pub trait DeriveInputExt {
     /// Appends derives to the list of derives.
     ///
     /// **Note:** This can only be used with [*attribute*] macros, and not [*derive*] macros.
@@ -23,7 +23,7 @@ pub trait DeriveInputDeriveExt {
     fn append_derives(&mut self, derives: Punctuated<NestedMeta, Token![,]>);
 }
 
-impl DeriveInputDeriveExt for DeriveInput {
+impl DeriveInputExt for DeriveInput {
     fn append_derives(&mut self, derives_to_append: Punctuated<NestedMeta, Token![,]>) {
         let attr_derives_existing = self
             .attrs
@@ -79,7 +79,7 @@ mod tests {
     use pretty_assertions::assert_eq;
     use syn::{parse_quote, DeriveInput};
 
-    use super::DeriveInputDeriveExt;
+    use super::DeriveInputExt;
 
     #[test]
     fn append_derives_creates_attr_when_attr_does_not_exist() {
