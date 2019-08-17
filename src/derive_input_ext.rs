@@ -1,6 +1,10 @@
-use syn::{parse_quote, punctuated::Punctuated, Attribute, DeriveInput, Meta, NestedMeta, Token};
+use std::fmt::Display;
 
-use crate::{meta_list_contains, nested_meta_to_ident};
+use syn::{
+    parse_quote, punctuated::Punctuated, Attribute, DeriveInput, Ident, Meta, NestedMeta, Token,
+};
+
+use crate::{meta_list_contains, nested_meta_to_ident, util};
 
 /// Functions to make it ergonomic to work with `struct` ASTs.
 pub trait DeriveInputExt {
@@ -21,6 +25,23 @@ pub trait DeriveInputExt {
     /// [*attribute*]: <https://doc.rust-lang.org/reference/procedural-macros.html#attribute-macros>
     /// [*derive*]: <https://doc.rust-lang.org/reference/procedural-macros.html#derive-mode-macros>
     fn append_derives(&mut self, derives: Punctuated<NestedMeta, Token![,]>);
+
+    /// Returns the parameter from `#[namespace(tag(parameter))]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is more than one parameter for the tag.
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
 }
 
 impl DeriveInputExt for DeriveInput {
@@ -72,12 +93,23 @@ impl DeriveInputExt for DeriveInput {
             self.attrs.push(derive_attribute);
         }
     }
+
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>,
+    {
+        util::tag_parameter(&self.attrs, namespace, tag)
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use syn::{parse_quote, DeriveInput};
+    use proc_macro2::Span;
+    use syn::{parse_quote, DeriveInput, Ident};
 
     use super::DeriveInputExt;
 
@@ -127,5 +159,39 @@ mod tests {
         let derives = parse_quote!(Clone, Copy, Default);
 
         ast.append_derives(derives);
+    }
+
+    #[test]
+    fn tag_parameter_returns_none_when_not_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my_derive]
+            struct Struct;
+        );
+
+        assert_eq!(ast.tag_parameter("my_derive", "tag_name"), None);
+    }
+
+    #[test]
+    fn tag_parameter_returns_ident_when_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my_derive(tag_name(Magic))]
+            struct Struct;
+        );
+
+        assert_eq!(
+            ast.tag_parameter("my_derive", "tag_name"),
+            Some(Ident::new("Magic", Span::call_site()))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected exactly one identifier for `#[my_derive(tag_name(..))]`.")]
+    fn tag_parameter_panics_when_multiple_parameters_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my_derive(tag_name(Magic, Magic2))]
+            struct Struct;
+        );
+
+        ast.tag_parameter("my_derive", "tag_name");
     }
 }
