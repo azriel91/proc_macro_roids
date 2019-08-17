@@ -285,7 +285,7 @@ pub use crate::{
     fields_named_append::FieldsNamedAppend,
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
-    util::{ident_concat, meta_list_contains, nested_meta_to_ident},
+    util::{ident_concat, meta_list_contains, nested_meta_to_ident, tag_parameter, tag_parameters},
 };
 
 mod derive_input_derive_ext;

@@ -1,5 +1,7 @@
+use std::fmt::Display;
+
 use proc_macro2::Span;
-use syn::{Ident, MetaList, NestedMeta};
+use syn::{Attribute, Ident, Meta, MetaList, NestedMeta};
 
 /// Returns the `Ident` of a nested meta. If it is a literal, `None` is returned.
 ///
@@ -35,4 +37,155 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
     combined.push_str(right);
 
     Ident::new(&combined, Span::call_site())
+}
+
+/// Returns the parameter from `#[namespace(tag(parameter))]`.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `name()` of the first-level attribute.
+/// * `tag`: The `name()` of the second-level attribute.
+///
+/// # Panics
+///
+/// Panics if the number of parameters for the tag is not exactly one.
+#[allow(clippy::let_and_return)] // Needed due to bug in clippy.
+pub fn tag_parameter<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Option<Ident>
+where
+    NS: Display,
+    Tag: Display,
+    Ident: PartialEq<NS>,
+    Ident: PartialEq<Tag>,
+{
+    let error_message = format!(
+        "Expected exactly one identifier for `#[{}({}(..))]`.",
+        &namespace, &tag,
+    );
+    let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
+    let name = tag_meta_list(&namespace_meta_lists, tag)
+        // We want to insert a resource for each item in the list.
+        .map(|meta_list| {
+            if meta_list.nested.len() != 1 {
+                panic!("{}. `{:?}`", &error_message, &meta_list.nested);
+            }
+
+            meta_list
+                .nested
+                .first()
+                .map(|pair| {
+                    let nested_meta = pair.value();
+                    if let NestedMeta::Meta(Meta::Word(ident)) = nested_meta {
+                        ident.clone()
+                    } else {
+                        panic!(
+                            "`{:?}` is an invalid value in this position.\n\
+                             Expected a single identifier.",
+                            nested_meta,
+                        );
+                    }
+                })
+                .expect("Expected one meta item to exist.")
+        })
+        .next();
+
+    name
+}
+
+/// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `name()` of the first-level attribute.
+/// * `tag`: The `name()` of the second-level attribute.
+///
+/// # Panics
+///
+/// Panics if any of the parameters are not `Ident`s.
+pub fn tag_parameters<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Vec<Ident>
+where
+    Ident: PartialEq<NS>,
+    Ident: PartialEq<Tag>,
+{
+    let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
+    let parameters = tag_meta_list(&namespace_meta_lists, tag)
+        // We want to insert a resource for each item in the list.
+        .flat_map(|meta_list| meta_list.nested.iter())
+        .map(|nested_meta| {
+            if let NestedMeta::Meta(Meta::Word(ident)) = nested_meta {
+                ident.clone()
+            } else {
+                panic!(
+                    "`{:?}` is an invalid value in this position.\n\
+                     Expected a single identifier.",
+                    nested_meta,
+                );
+            }
+        })
+        .collect::<Vec<Ident>>();
+
+    parameters
+}
+
+/// Returns the meta lists of the form: `#[namespace(..)]`.
+///
+/// Each `meta_list` is a `namespace(..)` meta item.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `name()` of the first-level attribute.
+fn namespace_meta_lists<NS>(attrs: &[Attribute], namespace: NS) -> Vec<MetaList>
+where
+    Ident: PartialEq<NS>,
+{
+    attrs
+        .iter()
+        .map(Attribute::parse_meta)
+        .filter_map(Result::ok)
+        .filter(|meta| meta.name() == namespace)
+        .filter_map(|meta| {
+            if let Meta::List(meta_list) = meta {
+                Some(meta_list)
+            } else {
+                None
+            }
+        })
+        .collect::<Vec<MetaList>>()
+}
+
+/// Returns an iterator over meta lists from `#[namespace(tag(..))]`.
+///
+/// # Parameters
+///
+/// * `namespace_meta_lists`: The `#[namespace(..)]` meta lists.
+/// * `tag`: The `name()` of the second-level attribute.
+fn tag_meta_list<'f, Tag>(
+    namespace_meta_lists: &'f [MetaList],
+    tag: Tag,
+) -> impl Iterator<Item = &'f MetaList> + 'f
+where
+    Tag: 'f,
+    Ident: PartialEq<Tag>,
+{
+    namespace_meta_lists
+        .iter()
+        .flat_map(|meta_list| meta_list.nested.iter())
+        .filter_map(|nested_meta| {
+            if let NestedMeta::Meta(meta) = nested_meta {
+                Some(meta)
+            } else {
+                None
+            }
+        })
+        .filter(move |meta| meta.name() == tag)
+        // `meta` is the `name(..)` item.
+        .filter_map(|meta| {
+            if let Meta::List(meta_list) = meta {
+                Some(meta_list)
+            } else {
+                None
+            }
+        })
 }

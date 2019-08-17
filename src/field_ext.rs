@@ -1,6 +1,10 @@
+use std::fmt::Display;
+
 use syn::{
     punctuated::Pair, Attribute, Field, Ident, Meta, NestedMeta, PathSegment, Type, TypePath,
 };
+
+use crate::util;
 
 /// Functions to make it ergonomic to inspect `Field`s and their attributes.
 pub trait FieldExt {
@@ -26,6 +30,23 @@ pub trait FieldExt {
     /// * `tag`: The `name()` of the second-level attribute.
     fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
     where
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
+
+    /// Returns the parameter from `#[namespace(tag(parameter))]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is more than one parameter for the tag.
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Ident>
+    where
+        NS: Display,
+        Tag: Display,
         Ident: PartialEq<NS>,
         Ident: PartialEq<Tag>;
 }
@@ -80,11 +101,22 @@ impl FieldExt for Field {
                 }
             })
     }
+
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>,
+    {
+        util::tag_parameter(&self.attrs, namespace, tag)
+    }
 }
 
 #[cfg(test)]
 mod tests {
-    use syn::{parse_quote, Fields, FieldsNamed};
+    use proc_macro2::Span;
+    use syn::{parse_quote, Fields, FieldsNamed, Ident};
 
     use super::FieldExt;
 
@@ -122,6 +154,46 @@ mod tests {
         let field = fields.iter().next().expect("Expected field to exist.");
 
         assert!(!field.is_phantom_data());
+    }
+
+    #[test]
+    fn tag_parameter_returns_none_when_not_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(field.tag_parameter("my_derive", "tag_name"), None);
+    }
+
+    #[test]
+    fn tag_parameter_returns_ident_when_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive(tag_name(Magic))]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.tag_parameter("my_derive", "tag_name"),
+            Some(Ident::new("Magic", Span::call_site()))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected exactly one identifier for `#[my_derive(tag_name(..))]`.")]
+    fn tag_parameter_panics_when_multiple_parameters_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive(tag_name(Magic, Magic2))]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        field.tag_parameter("my_derive", "tag_name");
     }
 
     mod fields_named {
