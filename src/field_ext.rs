@@ -1,20 +1,13 @@
+use std::fmt::Display;
+
 use syn::{
     punctuated::Pair, Attribute, Field, Ident, Meta, NestedMeta, PathSegment, Type, TypePath,
 };
 
+use crate::util;
+
 /// Functions to make it ergonomic to inspect `Field`s and their attributes.
 pub trait FieldExt {
-    /// Returns whether a field contains a given `#[namespace(tag)]` attribute.
-    ///
-    /// # Parameters
-    ///
-    /// * `namespace`: The `name()` of the first-level attribute.
-    /// * `tag`: The `name()` of the second-level attribute.
-    fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
-    where
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>;
-
     /// Returns the simple type name of a field.
     ///
     /// For example, the `PhantomData` in `std::marker::PhantomData<T>`.
@@ -28,9 +21,71 @@ pub trait FieldExt {
     /// * `use std::marker::PhantomData as GhostData;`
     /// * `use other_crate::OtherType as PhantomData;`
     fn is_phantom_data(&self) -> bool;
+
+    /// Returns whether a field contains a given `#[namespace(tag)]` attribute.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
+    where
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
+
+    /// Returns the parameter from `#[namespace(tag(parameter))]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is more than one parameter for the tag.
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Meta>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
+
+    /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Meta>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
 }
 
 impl FieldExt for Field {
+    fn type_name(&self) -> &Ident {
+        if let Type::Path(TypePath { path, .. }) = &self.ty {
+            if let Some(Pair::End(PathSegment { ident, .. })) = path.segments.last() {
+                return ident;
+            }
+        }
+        // kcov-ignore-start
+        panic!(
+            "Expected {}field type to be a `Path` with a segment.",
+            self.ident
+                .as_ref()
+                .map(|ident| format!("`{:?}` ", ident))
+                .unwrap_or_else(|| String::from(""))
+        );
+        // kcov-ignore-end
+    }
+
+    fn is_phantom_data(&self) -> bool {
+        self.type_name() == "PhantomData"
+    }
+
     fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
     where
         Ident: PartialEq<NS>,
@@ -60,31 +115,31 @@ impl FieldExt for Field {
             })
     }
 
-    fn type_name(&self) -> &Ident {
-        if let Type::Path(TypePath { path, .. }) = &self.ty {
-            if let Some(Pair::End(PathSegment { ident, .. })) = path.segments.last() {
-                return ident;
-            }
-        }
-        // kcov-ignore-start
-        panic!(
-            "Expected {}field type to be a `Path` with a segment.",
-            self.ident
-                .as_ref()
-                .map(|ident| format!("`{:?}` ", ident))
-                .unwrap_or_else(|| String::from(""))
-        );
-        // kcov-ignore-end
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Meta>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>,
+    {
+        util::tag_parameter(&self.attrs, namespace, tag)
     }
 
-    fn is_phantom_data(&self) -> bool {
-        self.type_name() == "PhantomData"
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Meta>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>,
+    {
+        util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use syn::{parse_quote, Fields, FieldsNamed};
+    use proc_macro2::Span;
+    use syn::{parse_quote, Fields, FieldsNamed, Ident, Meta};
 
     use super::FieldExt;
 
@@ -122,6 +177,79 @@ mod tests {
         let field = fields.iter().next().expect("Expected field to exist.");
 
         assert!(!field.is_phantom_data());
+    }
+
+    #[test]
+    fn tag_parameter_returns_none_when_not_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(field.tag_parameter("my_derive", "tag_name"), None);
+    }
+
+    #[test]
+    fn tag_parameter_returns_ident_when_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive(tag_name(Magic))]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.tag_parameter("my_derive", "tag_name"),
+            Some(Meta::Word(Ident::new("Magic", Span::call_site())))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected exactly one identifier for `#[my_derive(tag_name(..))]`.")]
+    fn tag_parameter_panics_when_multiple_parameters_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive(tag_name(Magic, Magic2))]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        field.tag_parameter("my_derive", "tag_name");
+    }
+
+    #[test]
+    fn tag_parameters_returns_empty_vec_when_not_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.tag_parameters("my_derive", "tag_name"),
+            Vec::<Meta>::new()
+        );
+    }
+
+    #[test]
+    fn tag_parameters_returns_idents_when_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive(tag_name(Magic, Magic2))]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.tag_parameters("my_derive", "tag_name"),
+            vec![
+                Meta::Word(Ident::new("Magic", Span::call_site())),
+                Meta::Word(Ident::new("Magic2", Span::call_site())),
+            ]
+        );
     }
 
     mod fields_named {
