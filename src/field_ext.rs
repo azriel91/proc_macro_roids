@@ -43,7 +43,7 @@ pub trait FieldExt {
     /// # Panics
     ///
     /// Panics if there is more than one parameter for the tag.
-    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Ident>
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Meta>
     where
         NS: Display,
         Tag: Display,
@@ -56,11 +56,7 @@ pub trait FieldExt {
     ///
     /// * `namespace`: The `name()` of the first-level attribute.
     /// * `tag`: The `name()` of the second-level attribute.
-    ///
-    /// # Panics
-    ///
-    /// Panics if any of the parameters are not `Ident`s.
-    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Ident>
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Meta>
     where
         NS: Display,
         Tag: Display,
@@ -119,7 +115,7 @@ impl FieldExt for Field {
             })
     }
 
-    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Ident>
+    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Meta>
     where
         NS: Display,
         Tag: Display,
@@ -129,7 +125,7 @@ impl FieldExt for Field {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
 
-    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Ident>
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Meta>
     where
         NS: Display,
         Tag: Display,
@@ -143,7 +139,7 @@ impl FieldExt for Field {
 #[cfg(test)]
 mod tests {
     use proc_macro2::Span;
-    use syn::{parse_quote, Fields, FieldsNamed, Ident};
+    use syn::{parse_quote, Fields, FieldsNamed, Ident, Meta};
 
     use super::FieldExt;
 
@@ -206,7 +202,7 @@ mod tests {
 
         assert_eq!(
             field.tag_parameter("my_derive", "tag_name"),
-            Some(Ident::new("Magic", Span::call_site()))
+            Some(Meta::Word(Ident::new("Magic", Span::call_site())))
         );
     }
 
@@ -234,7 +230,7 @@ mod tests {
 
         assert_eq!(
             field.tag_parameters("my_derive", "tag_name"),
-            Vec::<Ident>::new()
+            Vec::<Meta>::new()
         );
     }
 
@@ -250,8 +246,8 @@ mod tests {
         assert_eq!(
             field.tag_parameters("my_derive", "tag_name"),
             vec![
-                Ident::new("Magic", Span::call_site()),
-                Ident::new("Magic2", Span::call_site()),
+                Meta::Word(Ident::new("Magic", Span::call_site())),
+                Meta::Word(Ident::new("Magic2", Span::call_site())),
             ]
         );
     }

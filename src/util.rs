@@ -51,7 +51,7 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
 ///
 /// Panics if the number of parameters for the tag is not exactly one.
 #[allow(clippy::let_and_return)] // Needed due to bug in clippy.
-pub fn tag_parameter<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Option<Ident>
+pub fn tag_parameter<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Option<Meta>
 where
     NS: Display,
     Tag: Display,
@@ -63,7 +63,7 @@ where
         &namespace, &tag,
     );
     let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
-    let name = tag_meta_list(&namespace_meta_lists, tag)
+    let meta_param = tag_meta_list(&namespace_meta_lists, tag)
         // We want to insert a resource for each item in the list.
         .map(|meta_list| {
             if meta_list.nested.len() != 1 {
@@ -75,8 +75,8 @@ where
                 .first()
                 .map(|pair| {
                     let nested_meta = pair.value();
-                    if let NestedMeta::Meta(Meta::Word(ident)) = nested_meta {
-                        ident.clone()
+                    if let NestedMeta::Meta(meta) = nested_meta {
+                        meta.clone()
                     } else {
                         panic!(
                             "`{:?}` is an invalid value in this position.\n\
@@ -89,7 +89,7 @@ where
         })
         .next();
 
-    name
+    meta_param
 }
 
 /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
@@ -99,11 +99,7 @@ where
 /// * `attrs`: Attributes of the item to inspect.
 /// * `namespace`: The `name()` of the first-level attribute.
 /// * `tag`: The `name()` of the second-level attribute.
-///
-/// # Panics
-///
-/// Panics if any of the parameters are not `Ident`s.
-pub fn tag_parameters<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Vec<Ident>
+pub fn tag_parameters<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Vec<Meta>
 where
     Ident: PartialEq<NS>,
     Ident: PartialEq<Tag>,
@@ -112,18 +108,14 @@ where
     let parameters = tag_meta_list(&namespace_meta_lists, tag)
         // We want to insert a resource for each item in the list.
         .flat_map(|meta_list| meta_list.nested.iter())
-        .map(|nested_meta| {
-            if let NestedMeta::Meta(Meta::Word(ident)) = nested_meta {
-                ident.clone()
+        .filter_map(|nested_meta| {
+            if let NestedMeta::Meta(meta) = nested_meta {
+                Some(meta.clone())
             } else {
-                panic!(
-                    "`{:?}` is an invalid value in this position.\n\
-                     Expected a single identifier.",
-                    nested_meta,
-                );
+                None
             }
         })
-        .collect::<Vec<Ident>>();
+        .collect::<Vec<Meta>>();
 
     parameters
 }
