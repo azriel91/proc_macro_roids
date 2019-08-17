@@ -42,6 +42,23 @@ pub trait DeriveInputExt {
         Tag: Display,
         Ident: PartialEq<NS>,
         Ident: PartialEq<Tag>;
+
+    /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any of the parameters are not `Ident`s.
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
 }
 
 impl DeriveInputExt for DeriveInput {
@@ -102,6 +119,16 @@ impl DeriveInputExt for DeriveInput {
         Ident: PartialEq<Tag>,
     {
         util::tag_parameter(&self.attrs, namespace, tag)
+    }
+
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>,
+    {
+        util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
 
@@ -193,5 +220,34 @@ mod tests {
         );
 
         ast.tag_parameter("my_derive", "tag_name");
+    }
+
+    #[test]
+    fn tag_parameters_returns_empty_vec_when_not_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my_derive]
+            struct Struct;
+        );
+
+        assert_eq!(
+            ast.tag_parameters("my_derive", "tag_name"),
+            Vec::<Ident>::new()
+        );
+    }
+
+    #[test]
+    fn tag_parameters_returns_idents_when_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my_derive(tag_name(Magic, Magic2))]
+            struct Struct;
+        );
+
+        assert_eq!(
+            ast.tag_parameters("my_derive", "tag_name"),
+            vec![
+                Ident::new("Magic", Span::call_site()),
+                Ident::new("Magic2", Span::call_site()),
+            ]
+        );
     }
 }

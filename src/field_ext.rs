@@ -49,6 +49,23 @@ pub trait FieldExt {
         Tag: Display,
         Ident: PartialEq<NS>,
         Ident: PartialEq<Tag>;
+
+    /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `name()` of the first-level attribute.
+    /// * `tag`: The `name()` of the second-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any of the parameters are not `Ident`s.
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>;
 }
 
 impl FieldExt for Field {
@@ -110,6 +127,16 @@ impl FieldExt for Field {
         Ident: PartialEq<Tag>,
     {
         util::tag_parameter(&self.attrs, namespace, tag)
+    }
+
+    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Ident>
+    where
+        NS: Display,
+        Tag: Display,
+        Ident: PartialEq<NS>,
+        Ident: PartialEq<Tag>,
+    {
+        util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
 
@@ -194,6 +221,39 @@ mod tests {
         let field = fields.iter().next().expect("Expected field to exist.");
 
         field.tag_parameter("my_derive", "tag_name");
+    }
+
+    #[test]
+    fn tag_parameters_returns_empty_vec_when_not_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.tag_parameters("my_derive", "tag_name"),
+            Vec::<Ident>::new()
+        );
+    }
+
+    #[test]
+    fn tag_parameters_returns_idents_when_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my_derive(tag_name(Magic, Magic2))]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.tag_parameters("my_derive", "tag_name"),
+            vec![
+                Ident::new("Magic", Span::call_site()),
+                Ident::new("Magic2", Span::call_site()),
+            ]
+        );
     }
 
     mod fields_named {
