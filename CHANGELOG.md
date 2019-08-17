@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.0 (unreleased)
+
+ * ***Breaking:*** `DeriveInputDeriveExt` is renamed to `DeriveInputExt`.
+ * `FieldExt::tag_parameter` extracts the `Meta` param from `#[namespace(tag(param))]`.
+ * `FieldExt::tag_parameters` extracts the `Meta` params from `#[namespace(tag(param1, param2))]`.
+ * `DeriveInputExt::tag_parameter` extracts the `Meta` param from `#[namespace(tag(param))]`.
+ * `DeriveInputExt::tag_parameters` extracts the `Meta` params from `#[namespace(tag(param1, param2))]`.
+
 ## 0.3.0 (2019-08-04)
 
 * `FieldExt` provides methods to work with `Field`s:
