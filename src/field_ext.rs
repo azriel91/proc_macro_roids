@@ -1,8 +1,4 @@
-use std::fmt::Display;
-
-use syn::{
-    punctuated::Pair, Attribute, Field, Ident, Meta, NestedMeta, PathSegment, Type, TypePath,
-};
+use syn::{Attribute, Field, Ident, Meta, NestedMeta, Path, PathSegment, Type, TypePath};
 
 use crate::util;
 
@@ -26,48 +22,35 @@ pub trait FieldExt {
     ///
     /// # Parameters
     ///
-    /// * `namespace`: The `name()` of the first-level attribute.
-    /// * `tag`: The `name()` of the second-level attribute.
-    fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
-    where
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>;
+    /// * `namespace`: The `path()` of the first-level attribute.
+    /// * `tag`: The `path()` of the second-level attribute.
+    fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool;
 
     /// Returns the parameter from `#[namespace(tag(parameter))]`.
     ///
     /// # Parameters
     ///
-    /// * `namespace`: The `name()` of the first-level attribute.
-    /// * `tag`: The `name()` of the second-level attribute.
+    /// * `namespace`: The `path()` of the first-level attribute.
+    /// * `tag`: The `path()` of the second-level attribute.
     ///
     /// # Panics
     ///
     /// Panics if there is more than one parameter for the tag.
-    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Meta>
-    where
-        NS: Display,
-        Tag: Display,
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>;
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta>;
 
     /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
     ///
     /// # Parameters
     ///
-    /// * `namespace`: The `name()` of the first-level attribute.
-    /// * `tag`: The `name()` of the second-level attribute.
-    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Meta>
-    where
-        NS: Display,
-        Tag: Display,
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>;
+    /// * `namespace`: The `path()` of the first-level attribute.
+    /// * `tag`: The `path()` of the second-level attribute.
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta>;
 }
 
 impl FieldExt for Field {
     fn type_name(&self) -> &Ident {
         if let Type::Path(TypePath { path, .. }) = &self.ty {
-            if let Some(Pair::End(PathSegment { ident, .. })) = path.segments.last() {
+            if let Some(PathSegment { ident, .. }) = path.segments.last() {
                 return ident;
             }
         }
@@ -86,16 +69,12 @@ impl FieldExt for Field {
         self.type_name() == "PhantomData"
     }
 
-    fn contains_tag<NS, Tag>(&self, namespace: NS, tag: Tag) -> bool
-    where
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>,
-    {
+    fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool {
         self.attrs
             .iter()
             .map(Attribute::parse_meta)
             .filter_map(Result::ok)
-            .filter(|meta| meta.name() == namespace)
+            .filter(|meta| meta.path() == namespace)
             .any(|meta| {
                 if let Meta::List(meta_list) = meta {
                     meta_list
@@ -108,45 +87,31 @@ impl FieldExt for Field {
                                 None
                             }
                         })
-                        .any(|meta| meta.name() == tag)
+                        .any(|meta| meta.path() == tag)
                 } else {
                     false
                 }
             })
     }
 
-    fn tag_parameter<NS, Tag>(&self, namespace: NS, tag: Tag) -> Option<Meta>
-    where
-        NS: Display,
-        Tag: Display,
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>,
-    {
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta> {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
 
-    fn tag_parameters<NS, Tag>(&self, namespace: NS, tag: Tag) -> Vec<Meta>
-    where
-        NS: Display,
-        Tag: Display,
-        Ident: PartialEq<NS>,
-        Ident: PartialEq<Tag>,
-    {
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta> {
         util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use proc_macro2::Span;
-    use syn::{parse_quote, Fields, FieldsNamed, Ident, Meta};
+    use syn::{parse_quote, Fields, FieldsNamed, Meta};
 
     use super::FieldExt;
 
     #[test]
     fn type_name_returns_simple_type_name() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive(tag_name)]
             pub name: PhantomData<T>,
         }};
         let fields = Fields::from(fields_named);
@@ -158,7 +123,6 @@ mod tests {
     #[test]
     fn is_phantom_data_returns_true_for_phantom_data() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive(tag_name)]
             pub name: PhantomData<T>,
         }};
         let fields = Fields::from(fields_named);
@@ -170,7 +134,6 @@ mod tests {
     #[test]
     fn is_phantom_data_returns_false_for_non_phantom_data() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive(tag_name)]
             pub name: GhostData<T>,
         }};
         let fields = Fields::from(fields_named);
@@ -182,72 +145,75 @@ mod tests {
     #[test]
     fn tag_parameter_returns_none_when_not_present() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive]
+            #[my::derive]
             pub name: u32,
         }};
         let fields = Fields::from(fields_named);
         let field = fields.iter().next().expect("Expected field to exist.");
 
-        assert_eq!(field.tag_parameter("my_derive", "tag_name"), None);
+        let parameter = field.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name));
+        assert_eq!(parameter, None);
     }
 
     #[test]
-    fn tag_parameter_returns_ident_when_present() {
+    fn tag_parameter_returns_path_when_present() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive(tag_name(Magic))]
+            #[my::derive(tag::name(Magic))]
             pub name: u32,
         }};
         let fields = Fields::from(fields_named);
         let field = fields.iter().next().expect("Expected field to exist.");
 
         assert_eq!(
-            field.tag_parameter("my_derive", "tag_name"),
-            Some(Meta::Word(Ident::new("Magic", Span::call_site())))
+            field.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name)),
+            Some(Meta::Path(parse_quote!(Magic)))
         );
     }
 
     #[test]
-    #[should_panic(expected = "Expected exactly one identifier for `#[my_derive(tag_name(..))]`.")]
+    #[should_panic(
+        expected = "Expected exactly one identifier for `#[my::derive(tag::name(..))]`."
+    )]
     fn tag_parameter_panics_when_multiple_parameters_present() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive(tag_name(Magic, Magic2))]
+            #[my::derive(tag::name(Magic::One, Magic::Two))]
             pub name: u32,
         }};
         let fields = Fields::from(fields_named);
         let field = fields.iter().next().expect("Expected field to exist.");
 
-        field.tag_parameter("my_derive", "tag_name");
+        field.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name));
     }
 
     #[test]
     fn tag_parameters_returns_empty_vec_when_not_present() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive]
+            #[my::derive]
             pub name: u32,
         }};
         let fields = Fields::from(fields_named);
         let field = fields.iter().next().expect("Expected field to exist.");
 
         assert_eq!(
-            field.tag_parameters("my_derive", "tag_name"),
+            field.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
             Vec::<Meta>::new()
         );
     }
 
     #[test]
-    fn tag_parameters_returns_idents_when_present() {
+    fn tag_parameters_returns_paths_when_present() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my_derive(tag_name(Magic, Magic2))]
+            #[my::derive(tag::name(Magic::One, Magic::Two))]
             pub name: u32,
         }};
         let fields = Fields::from(fields_named);
         let field = fields.iter().next().expect("Expected field to exist.");
 
         assert_eq!(
-            field.tag_parameters("my_derive", "tag_name"),
+            field.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
             vec![
-                Meta::Word(Ident::new("Magic", Span::call_site())),
-                Meta::Word(Ident::new("Magic2", Span::call_site())),
+                Meta::Path(parse_quote!(Magic::One)),
+                Meta::Path(parse_quote!(Magic::Two)),
             ]
         );
     }
@@ -262,13 +228,13 @@ mod tests {
         #[test]
         fn contains_tag_returns_true_when_tag_exists() -> Result<(), Error> {
             let fields_named: FieldsNamed = parse_quote! {{
-                #[my_derive(tag_name)]
+                #[my::derive(tag::name)]
                 pub name: PhantomData,
             }};
             let fields = Fields::from(fields_named);
             let field = fields.iter().next().expect("Expected field to exist.");
 
-            assert!(field.contains_tag("my_derive", "tag_name"));
+            assert!(field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)));
 
             Ok(())
         }
@@ -277,15 +243,15 @@ mod tests {
         fn contains_tag_returns_false_when_tag_does_not_exist() -> Result<(), Error> {
             let tokens_list = vec![
                 quote! {{
-                    #[my_derive]
+                    #[my::derive]
                     pub name: PhantomData,
                 }},
                 quote! {{
-                    #[my_derive(other)]
+                    #[my::derive(other)]
                     pub name: PhantomData,
                 }},
                 quote! {{
-                    #[other(tag_name)]
+                    #[other(tag::name)]
                     pub name: PhantomData,
                 }},
             ];
@@ -305,7 +271,7 @@ mod tests {
                     let field = fields.iter().next().expect("Expected field to exist.");
 
                     assert!(
-                        !field.contains_tag("my_derive", "tag_name"),
+                        !field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
                         assertion_message // kcov-ignore
                     );
 
@@ -324,13 +290,13 @@ mod tests {
         #[test]
         fn contains_tag_returns_true_when_tag_exists() -> Result<(), Error> {
             let fields_unnamed: FieldsUnnamed = parse_quote! {(
-                #[my_derive(tag_name)]
+                #[my::derive(tag::name)]
                 pub PhantomData,
             )};
             let fields = Fields::from(fields_unnamed);
             let field = fields.iter().next().expect("Expected field to exist.");
 
-            assert!(field.contains_tag("my_derive", "tag_name"));
+            assert!(field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)));
 
             Ok(())
         }
@@ -339,15 +305,15 @@ mod tests {
         fn contains_tag_returns_false_when_tag_does_not_exist() -> Result<(), Error> {
             let tokens_list = vec![
                 quote! {(
-                    #[my_derive]
+                    #[my::derive]
                     pub PhantomData,
                 )},
                 quote! {(
-                    #[my_derive(other)]
+                    #[my::derive(other)]
                     pub PhantomData,
                 )},
                 quote! {(
-                    #[other(tag_name)]
+                    #[other(tag::name)]
                     pub PhantomData,
                 )},
             ];
@@ -367,7 +333,7 @@ mod tests {
                     let field = fields.iter().next().expect("Expected field to exist.");
 
                     assert!(
-                        !field.contains_tag("my_derive", "tag_name"),
+                        !field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
                         assertion_message // kcov-ignore
                     );
 
