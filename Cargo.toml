@@ -1,6 +1,6 @@
 [package]
 name = "proc_macro_roids"
-version = "0.4.0"
+version = "0.5.0"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
 description = "Traits and functions to make writing proc macros more ergonomic."
 repository = "https://github.com/azriel91/proc_macro_roids"
@@ -10,9 +10,9 @@ keywords = ["proc_macro", "macros"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-proc-macro2 = "0.4.27"
-quote = "0.6.11"
-syn = { version = "0.15.29", features = ["extra-traits", "visit"] }
+proc-macro2 = "1.0.1"
+quote = "1.0.2"
+syn = { version = "1.0.3", features = ["extra-traits", "visit"] }
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"

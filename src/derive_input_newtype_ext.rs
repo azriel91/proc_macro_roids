@@ -41,7 +41,6 @@ impl DeriveInputNewtypeExt for DeriveInput {
                     .unnamed
                     .first()
                     .expect("Expected field to exist.")
-                    .value()
             } else {
                 panic!(NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD)
             }

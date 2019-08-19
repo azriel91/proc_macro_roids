@@ -1,12 +1,17 @@
 # Changelog
 
-## 0.4.0 (unreleased)
+## 0.5.0 (unreleased)
 
- * ***Breaking:*** `DeriveInputDeriveExt` is renamed to `DeriveInputExt`.
- * `FieldExt::tag_parameter` extracts the `Meta` param from `#[namespace(tag(param))]`.
- * `FieldExt::tag_parameters` extracts the `Meta` params from `#[namespace(tag(param1, param2))]`.
- * `DeriveInputExt::tag_parameter` extracts the `Meta` param from `#[namespace(tag(param))]`.
- * `DeriveInputExt::tag_parameters` extracts the `Meta` params from `#[namespace(tag(param1, param2))]`.
+* `syn`, `quote`, and `proc_macro2` are upgraded to `1.0`.
+* ***Breaking:*** `nested_meta_to_ident` is renamed to `nested_meta_to_path`.
+
+## 0.4.0 (2019-08-17)
+
+* ***Breaking:*** `DeriveInputDeriveExt` is renamed to `DeriveInputExt`.
+* `FieldExt::tag_parameter` extracts the `Meta` param from `#[namespace(tag(param))]`.
+* `FieldExt::tag_parameters` extracts the `Meta` params from `#[namespace(tag(param1, param2))]`.
+* `DeriveInputExt::tag_parameter` extracts the `Meta` param from `#[namespace(tag(param))]`.
+* `DeriveInputExt::tag_parameters` extracts the `Meta` params from `#[namespace(tag(param1, param2))]`.
 
 ## 0.3.0 (2019-08-04)
 

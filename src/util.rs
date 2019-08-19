@@ -1,17 +1,16 @@
-use std::fmt::Display;
-
 use proc_macro2::Span;
-use syn::{Attribute, Ident, Meta, MetaList, NestedMeta};
+use quote::quote;
+use syn::{Attribute, Ident, Meta, MetaList, NestedMeta, Path};
 
-/// Returns the `Ident` of a nested meta. If it is a literal, `None` is returned.
+/// Returns the `Path` of a nested meta. If it is a literal, `None` is returned.
 ///
 /// # Parameters
 ///
-/// * `nested_meta`: The `NestedMeta` to extract the `Ident` from.
-pub fn nested_meta_to_ident(nested_meta: &NestedMeta) -> Option<Ident> {
+/// * `nested_meta`: The `NestedMeta` to extract the `Path` from.
+pub fn nested_meta_to_path(nested_meta: &NestedMeta) -> Option<&Path> {
     match nested_meta {
-        NestedMeta::Meta(meta) => Some(meta.name()),
-        NestedMeta::Literal(..) => None,
+        NestedMeta::Meta(meta) => Some(meta.path()),
+        NestedMeta::Lit(..) => None,
     }
 }
 
@@ -44,24 +43,21 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
 /// # Parameters
 ///
 /// * `attrs`: Attributes of the item to inspect.
-/// * `namespace`: The `name()` of the first-level attribute.
-/// * `tag`: The `name()` of the second-level attribute.
+/// * `namespace`: The `path()` of the first-level attribute.
+/// * `tag`: The `path()` of the second-level attribute.
 ///
 /// # Panics
 ///
 /// Panics if the number of parameters for the tag is not exactly one.
 #[allow(clippy::let_and_return)] // Needed due to bug in clippy.
-pub fn tag_parameter<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Option<Meta>
-where
-    NS: Display,
-    Tag: Display,
-    Ident: PartialEq<NS>,
-    Ident: PartialEq<Tag>,
-{
-    let error_message = format!(
-        "Expected exactly one identifier for `#[{}({}(..))]`.",
-        &namespace, &tag,
-    );
+pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Option<Meta> {
+    let error_message = {
+        format!(
+            "Expected exactly one identifier for `#[{}({}(..))]`.",
+            format_path(namespace),
+            format_path(tag),
+        )
+    };
     let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
     let meta_param = tag_meta_list(&namespace_meta_lists, tag)
         // We want to insert a resource for each item in the list.
@@ -73,8 +69,7 @@ where
             meta_list
                 .nested
                 .first()
-                .map(|pair| {
-                    let nested_meta = pair.value();
+                .map(|nested_meta| {
                     if let NestedMeta::Meta(meta) = nested_meta {
                         meta.clone()
                     } else {
@@ -97,13 +92,9 @@ where
 /// # Parameters
 ///
 /// * `attrs`: Attributes of the item to inspect.
-/// * `namespace`: The `name()` of the first-level attribute.
-/// * `tag`: The `name()` of the second-level attribute.
-pub fn tag_parameters<NS, Tag>(attrs: &[Attribute], namespace: NS, tag: Tag) -> Vec<Meta>
-where
-    Ident: PartialEq<NS>,
-    Ident: PartialEq<Tag>,
-{
+/// * `namespace`: The `path()` of the first-level attribute.
+/// * `tag`: The `path()` of the second-level attribute.
+pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<Meta> {
     let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
     let parameters = tag_meta_list(&namespace_meta_lists, tag)
         // We want to insert a resource for each item in the list.
@@ -127,16 +118,13 @@ where
 /// # Parameters
 ///
 /// * `attrs`: Attributes of the item to inspect.
-/// * `namespace`: The `name()` of the first-level attribute.
-fn namespace_meta_lists<NS>(attrs: &[Attribute], namespace: NS) -> Vec<MetaList>
-where
-    Ident: PartialEq<NS>,
-{
+/// * `namespace`: The `path()` of the first-level attribute.
+fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaList> {
     attrs
         .iter()
         .map(Attribute::parse_meta)
         .filter_map(Result::ok)
-        .filter(|meta| meta.name() == namespace)
+        .filter(|meta| meta.path() == namespace)
         .filter_map(|meta| {
             if let Meta::List(meta_list) = meta {
                 Some(meta_list)
@@ -152,15 +140,11 @@ where
 /// # Parameters
 ///
 /// * `namespace_meta_lists`: The `#[namespace(..)]` meta lists.
-/// * `tag`: The `name()` of the second-level attribute.
-fn tag_meta_list<'f, Tag>(
+/// * `tag`: The `path()` of the second-level attribute.
+fn tag_meta_list<'f>(
     namespace_meta_lists: &'f [MetaList],
-    tag: Tag,
-) -> impl Iterator<Item = &'f MetaList> + 'f
-where
-    Tag: 'f,
-    Ident: PartialEq<Tag>,
-{
+    tag: &'f Path,
+) -> impl Iterator<Item = &'f MetaList> + 'f {
     namespace_meta_lists
         .iter()
         .flat_map(|meta_list| meta_list.nested.iter())
@@ -171,7 +155,7 @@ where
                 None
             }
         })
-        .filter(move |meta| meta.name() == tag)
+        .filter(move |meta| meta.path() == tag)
         // `meta` is the `name(..)` item.
         .filter_map(|meta| {
             if let Meta::List(meta_list) = meta {
@@ -180,4 +164,13 @@ where
                 None
             }
         })
+}
+
+/// Returns a `Path` as a String without whitespace between tokens.
+pub fn format_path(path: &Path) -> String {
+    quote!(#path)
+        .to_string()
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
 }
