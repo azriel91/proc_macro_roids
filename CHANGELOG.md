@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.5.0 (unreleased)
+## 0.5.0 (2019-08-19)
 
 * `syn`, `quote`, and `proc_macro2` are upgraded to `1.0`.
 * ***Breaking:*** `nested_meta_to_ident` is renamed to `nested_meta_to_path`.
