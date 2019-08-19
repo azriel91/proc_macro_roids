@@ -19,7 +19,7 @@ use proc_macro::TokenStream;
 use proc_macro2::Span;
 use proc_macro_roids::{DeriveInputStructExt, FieldExt, IdentExt};
 use quote::quote;
-use syn::{parse_macro_input, DeriveInput, Ident};
+use syn::{parse_macro_input, parse_quote, DeriveInput, Ident};
 
 /// Derives a `Super` enum with a variant for each struct field:
 ///
@@ -51,7 +51,7 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
     let relevant_fields = fields
         .iter()
         .filter(|field| !field.is_phantom_data())
-        .filter(|field| !field.contains_tag("super_derive", "skip"));
+        .filter(|field| !field.contains_tag(&parse_quote!(super_derive), &parse_quote!(skip)));
 
     let variants = relevant_fields
         .map(|field| {
@@ -263,11 +263,11 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
     ```rust,edition2018
     use proc_macro_roids::FieldExt;
     use proc_macro2::Span;
-    use syn::{parse_quote, Ident, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue};
+    use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue};
 
     # fn main() {
     let fields_named: FieldsNamed = parse_quote! {{
-        #[my_derive(tag_name(param = "value"))]
+        #[my::derive(tag::name(param = "value"))]
         pub name: PhantomData<T>,
     }};
     let fields = Fields::from(fields_named);
@@ -275,11 +275,14 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
 
     assert_eq!(field.type_name(), "PhantomData");
     assert!(field.is_phantom_data());
-    assert!(field.contains_tag("my_derive", "tag_name"));
+    assert!(field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)));
     assert_eq!(
-        field.tag_parameter("my_derive", "tag_name").expect("Expected parameter to exist."),
+        field.tag_parameter(
+            &parse_quote!(my::derive),
+            &parse_quote!(tag::name),
+        ).expect("Expected parameter to exist."),
         Meta::NameValue(MetaNameValue {
-            ident: Ident::new("param", Span::call_site()),
+            path: parse_quote!(param),
             eq_token: Default::default(),
             lit: Lit::Str(LitStr::new("value", Span::call_site())),
         }),
