@@ -36,7 +36,7 @@ pub trait FieldExt {
     /// # Panics
     ///
     /// Panics if there is more than one parameter for the tag.
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta>;
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta>;
 
     /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
     ///
@@ -44,7 +44,7 @@ pub trait FieldExt {
     ///
     /// * `namespace`: The `path()` of the first-level attribute.
     /// * `tag`: The `path()` of the second-level attribute.
-    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta>;
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<NestedMeta>;
 }
 
 impl FieldExt for Field {
@@ -94,18 +94,18 @@ impl FieldExt for Field {
             })
     }
 
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta> {
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta> {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
 
-    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta> {
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<NestedMeta> {
         util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use syn::{parse_quote, Fields, FieldsNamed, Meta};
+    use syn::{parse_quote, Fields, FieldsNamed, Lit, Meta, NestedMeta};
 
     use super::FieldExt;
 
@@ -166,7 +166,7 @@ mod tests {
 
         assert_eq!(
             field.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Some(Meta::Path(parse_quote!(Magic)))
+            Some(NestedMeta::Meta(Meta::Path(parse_quote!(Magic))))
         );
     }
 
@@ -196,14 +196,14 @@ mod tests {
 
         assert_eq!(
             field.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Vec::<Meta>::new()
+            Vec::<NestedMeta>::new()
         );
     }
 
     #[test]
     fn tag_parameters_returns_paths_when_present() {
         let fields_named: FieldsNamed = parse_quote! {{
-            #[my::derive(tag::name(Magic::One, Magic::Two))]
+            #[my::derive(tag::name(Magic::One, "{ Magic::Two }"))]
             pub name: u32,
         }};
         let fields = Fields::from(fields_named);
@@ -212,8 +212,8 @@ mod tests {
         assert_eq!(
             field.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
             vec![
-                Meta::Path(parse_quote!(Magic::One)),
-                Meta::Path(parse_quote!(Magic::Two)),
+                NestedMeta::Meta(Meta::Path(parse_quote!(Magic::One))),
+                NestedMeta::Lit(Lit::Str(parse_quote!("{ Magic::Two }"))),
             ]
         );
     }

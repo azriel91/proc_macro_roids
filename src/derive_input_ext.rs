@@ -34,7 +34,7 @@ pub trait DeriveInputExt {
     /// # Panics
     ///
     /// Panics if there is more than one parameter for the tag.
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta>;
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta>;
 
     /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
     ///
@@ -42,7 +42,7 @@ pub trait DeriveInputExt {
     ///
     /// * `namespace`: The `path()` of the first-level attribute.
     /// * `tag`: The `path()` of the second-level attribute.
-    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta>;
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<NestedMeta>;
 }
 
 impl DeriveInputExt for DeriveInput {
@@ -95,11 +95,11 @@ impl DeriveInputExt for DeriveInput {
         }
     }
 
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta> {
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta> {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
 
-    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta> {
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<NestedMeta> {
         util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
@@ -107,7 +107,7 @@ impl DeriveInputExt for DeriveInput {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use syn::{parse_quote, DeriveInput, Meta};
+    use syn::{parse_quote, DeriveInput, Lit, Meta, NestedMeta};
 
     use super::DeriveInputExt;
 
@@ -181,7 +181,7 @@ mod tests {
 
         assert_eq!(
             ast.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Some(Meta::Path(parse_quote!(Magic)))
+            Some(NestedMeta::Meta(Meta::Path(parse_quote!(Magic))))
         );
     }
 
@@ -207,22 +207,22 @@ mod tests {
 
         assert_eq!(
             ast.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Vec::<Meta>::new()
+            Vec::<NestedMeta>::new()
         );
     }
 
     #[test]
     fn tag_parameters_returns_idents_when_present() {
         let ast: DeriveInput = parse_quote!(
-            #[my::derive(tag::name(Magic::One, Magic::Two))]
+            #[my::derive(tag::name(Magic::One, "{ Magic::Two }"))]
             struct Struct;
         );
 
         assert_eq!(
             ast.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
             vec![
-                Meta::Path(parse_quote!(Magic::One)),
-                Meta::Path(parse_quote!(Magic::Two)),
+                NestedMeta::Meta(Meta::Path(parse_quote!(Magic::One))),
+                NestedMeta::Lit(Lit::Str(parse_quote!("{ Magic::Two }"))),
             ]
         );
     }

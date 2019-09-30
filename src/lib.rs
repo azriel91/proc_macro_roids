@@ -259,7 +259,7 @@
 //!     ```rust,edition2018
 //!     use proc_macro_roids::FieldExt;
 //!     use proc_macro2::Span;
-//!     use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue};
+//!     use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue, NestedMeta};
 //!
 //!     # fn main() {
 //!     let fields_named: FieldsNamed = parse_quote! {{
@@ -277,11 +277,11 @@
 //!             &parse_quote!(my::derive),
 //!             &parse_quote!(tag::name),
 //!         ).expect("Expected parameter to exist."),
-//!         Meta::NameValue(MetaNameValue {
+//!         NestedMeta::Meta(Meta::NameValue(MetaNameValue {
 //!             path: parse_quote!(param),
 //!             eq_token: Default::default(),
 //!             lit: Lit::Str(LitStr::new("value", Span::call_site())),
-//!         }),
+//!         })),
 //!     );
 //!     # }
 //!     ```
@@ -298,8 +298,8 @@ pub use crate::{
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
     util::{
-        format_path, ident_concat, meta_list_contains, nested_meta_to_path, tag_parameter,
-        tag_parameters,
+        format_path, ident_concat, meta_list_contains, namespace_meta_lists, nested_meta_to_path,
+        tag_meta_list, tag_meta_list_owned, tag_parameter, tag_parameters,
     },
 };
 
