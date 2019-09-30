@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0 (unreleased)
+
+* ***Breaking:*** `DeriveInputExt::tag_parameter` and `DeriveInputExt::tag_parameters` return `NestedMeta`.
+* ***Breaking:*** `FieldExt::tag_parameter` and `FieldExt::tag_parameters` return `NestedMeta`.
+* `util::tag_parameter` and `util::tag_parameters` are now `pub`.
+* `util::namespace_meta_list` is now `pub`.
+* `util::tag_meta_list` and `util::tag_meta_list_owned` are now `pub`.
+
 ## 0.5.0 (2019-08-19)
 
 * `syn`, `quote`, and `proc_macro2` are upgraded to `1.0`.
