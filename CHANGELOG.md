@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.6.0 (unreleased)
+## 0.6.0 (2019-10-01)
 
 * ***Breaking:*** `DeriveInputExt::tag_parameter` and `DeriveInputExt::tag_parameters` return `NestedMeta`.
 * ***Breaking:*** `FieldExt::tag_parameter` and `FieldExt::tag_parameters` return `NestedMeta`.

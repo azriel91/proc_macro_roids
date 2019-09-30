@@ -263,7 +263,7 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
     ```rust,edition2018
     use proc_macro_roids::FieldExt;
     use proc_macro2::Span;
-    use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue};
+    use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue, NestedMeta};
 
     # fn main() {
     let fields_named: FieldsNamed = parse_quote! {{
@@ -281,11 +281,11 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
             &parse_quote!(my::derive),
             &parse_quote!(tag::name),
         ).expect("Expected parameter to exist."),
-        Meta::NameValue(MetaNameValue {
+        NestedMeta::Meta(Meta::NameValue(MetaNameValue {
             path: parse_quote!(param),
             eq_token: Default::default(),
             lit: Lit::Str(LitStr::new("value", Span::call_site())),
-        }),
+        })),
     );
     # }
     ```
