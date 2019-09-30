@@ -50,7 +50,7 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
 ///
 /// Panics if the number of parameters for the tag is not exactly one.
 #[allow(clippy::let_and_return)] // Needed due to bug in clippy.
-pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Option<Meta> {
+pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Option<NestedMeta> {
     let error_message = {
         format!(
             "Expected exactly one identifier for `#[{}({}(..))]`.",
@@ -59,7 +59,7 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
         )
     };
     let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
-    let meta_param = tag_meta_list(&namespace_meta_lists, tag)
+    let meta_param = tag_meta_list_owned(namespace_meta_lists, tag)
         // We want to insert a resource for each item in the list.
         .map(|meta_list| {
             if meta_list.nested.len() != 1 {
@@ -68,18 +68,9 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
 
             meta_list
                 .nested
-                .first()
-                .map(|nested_meta| {
-                    if let NestedMeta::Meta(meta) = nested_meta {
-                        meta.clone()
-                    } else {
-                        panic!(
-                            "`{:?}` is an invalid value in this position.\n\
-                             Expected a single identifier.",
-                            nested_meta,
-                        );
-                    }
-                })
+                .into_pairs()
+                .map(Pair::into_value)
+                .next()
                 .expect("Expected one meta item to exist.")
         })
         .next();

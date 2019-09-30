@@ -34,7 +34,7 @@ pub trait DeriveInputExt {
     /// # Panics
     ///
     /// Panics if there is more than one parameter for the tag.
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta>;
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta>;
 
     /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
     ///
@@ -95,7 +95,7 @@ impl DeriveInputExt for DeriveInput {
         }
     }
 
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta> {
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta> {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
 
@@ -181,7 +181,7 @@ mod tests {
 
         assert_eq!(
             ast.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Some(Meta::Path(parse_quote!(Magic)))
+            Some(NestedMeta::Meta(Meta::Path(parse_quote!(Magic))))
         );
     }
 
