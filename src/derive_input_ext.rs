@@ -24,6 +24,14 @@ pub trait DeriveInputExt {
     /// [*derive*]: <https://doc.rust-lang.org/reference/procedural-macros.html#derive-mode-macros>
     fn append_derives(&mut self, derives: Punctuated<NestedMeta, Token![,]>);
 
+    /// Returns whether the type contains a given `#[namespace(tag)]` attribute.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `path()` of the first-level attribute.
+    /// * `tag`: The `path()` of the second-level attribute.
+    fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool;
+
     /// Returns the parameter from `#[namespace(tag(parameter))]`.
     ///
     /// # Parameters
@@ -95,6 +103,10 @@ impl DeriveInputExt for DeriveInput {
         }
     }
 
+    fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool {
+        util::contains_tag(&self.attrs, namespace, tag)
+    }
+
     fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta> {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
@@ -107,7 +119,9 @@ impl DeriveInputExt for DeriveInput {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use syn::{parse_quote, DeriveInput, Lit, Meta, NestedMeta};
+    use proc_macro2::Span;
+    use quote::quote;
+    use syn::{parse_quote, DeriveInput, Error, Lit, Meta, NestedMeta};
 
     use super::DeriveInputExt;
 
@@ -157,6 +171,56 @@ mod tests {
         let derives = parse_quote!(Clone, Copy, Default);
 
         ast.append_derives(derives);
+    }
+
+    #[test]
+    fn contains_tag_returns_true_when_tag_exists() -> Result<(), Error> {
+        let ast: DeriveInput = parse_quote!(
+            #[my::derive(tag::name)]
+            struct Struct;
+        );
+
+        assert!(ast.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)));
+
+        Ok(())
+    }
+
+    #[test]
+    fn contains_tag_returns_false_when_tag_does_not_exist() -> Result<(), Error> {
+        let tokens_list = vec![
+            quote! {
+                #[my::derive]
+                struct Struct;
+            },
+            quote! {
+                #[my::derive(other)]
+                struct Struct;
+            },
+            quote! {
+                #[other(tag::name)]
+                struct Struct;
+            },
+        ];
+
+        tokens_list
+            .into_iter()
+            .try_for_each(|tokens| -> Result<(), Error> {
+                let message = format!("Failed to parse tokens: `{}`", &tokens);
+                let assertion_message = format!(
+                    "Expected `contains_tag` to return false for tokens: `{}`",
+                    &tokens
+                );
+
+                let ast: DeriveInput =
+                    syn::parse2(tokens).map_err(|_| Error::new(Span::call_site(), &message))?;
+
+                assert!(
+                    !ast.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
+                    assertion_message // kcov-ignore
+                );
+
+                Ok(())
+            })
     }
 
     #[test]
