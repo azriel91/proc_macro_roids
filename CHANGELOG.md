@@ -4,6 +4,8 @@
 
 * `util::contains_tag` supports checking if any list of attributes contains a `#[namespace(tag)]`.
 * `DeriveInputExt::contains_tag` supports checking if a type contains a `#[namespace(tag)]`.
+* Added `FieldsExt::is_unit/is_named/is_tuple` which returns a `bool` for the relevant `Fields` type.
+* `FieldsExt::construction_form` returns tokens suitable for deconstructing / constructing the relevant fields types.
 
 ## 0.6.0 (2019-10-01)
 
