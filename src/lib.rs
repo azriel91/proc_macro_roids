@@ -294,6 +294,7 @@ pub use crate::{
     derive_input_newtype_ext::DeriveInputNewtypeExt,
     derive_input_struct_ext::DeriveInputStructExt,
     field_ext::FieldExt,
+    fields_ext::FieldsExt,
     fields_named_append::FieldsNamedAppend,
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
@@ -307,6 +308,7 @@ mod derive_input_ext;
 mod derive_input_newtype_ext;
 mod derive_input_struct_ext;
 mod field_ext;
+mod fields_ext;
 mod fields_named_append;
 mod fields_unnamed_append;
 mod ident_ext;
