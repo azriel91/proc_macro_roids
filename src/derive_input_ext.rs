@@ -61,7 +61,7 @@ impl DeriveInputExt for DeriveInput {
             .filter(|attr| attr.path.is_ident("derive"))
             .filter_map(|attr| match attr.parse_meta() {
                 Ok(Meta::List(meta_list)) => Some((attr, meta_list)),
-                _ => None,
+                _ => None, // kcov-ignore
             })
             .next();
 
@@ -214,7 +214,9 @@ mod tests {
                 let ast: DeriveInput =
                     syn::parse2(tokens).map_err(|_| Error::new(Span::call_site(), &message))?;
 
+                // kcov-ignore-start
                 assert!(
+                    // kcov-ignore-end
                     !ast.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
                     assertion_message // kcov-ignore
                 );
@@ -230,7 +232,9 @@ mod tests {
             struct Struct;
         );
 
+        // kcov-ignore-start
         assert_eq!(
+            // kcov-ignore-end
             ast.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name)),
             None
         );

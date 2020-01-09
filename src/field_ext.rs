@@ -249,7 +249,9 @@ mod tests {
                     let fields = Fields::from(fields_named);
                     let field = fields.iter().next().expect("Expected field to exist.");
 
+                    // kcov-ignore-start
                     assert!(
+                        // kcov-ignore-end
                         !field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
                         assertion_message // kcov-ignore
                     );
@@ -311,7 +313,9 @@ mod tests {
                     let fields = Fields::from(fields_unnamed);
                     let field = fields.iter().next().expect("Expected field to exist.");
 
+                    // kcov-ignore-start
                     assert!(
+                        // kcov-ignore-end
                         !field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
                         assertion_message // kcov-ignore
                     );
