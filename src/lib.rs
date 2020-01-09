@@ -298,8 +298,8 @@ pub use crate::{
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
     util::{
-        format_path, ident_concat, meta_list_contains, namespace_meta_lists, nested_meta_to_path,
-        tag_meta_list, tag_meta_list_owned, tag_parameter, tag_parameters,
+        contains_tag, format_path, ident_concat, meta_list_contains, namespace_meta_lists,
+        nested_meta_to_path, tag_meta_list, tag_meta_list_owned, tag_parameter, tag_parameters,
     },
 };
 

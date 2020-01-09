@@ -38,6 +38,38 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
     Ident::new(&combined, Span::call_site())
 }
 
+/// Returns whether an item's attributes contains a given `#[namespace(tag)]` attribute.
+///
+/// # Parameters
+///
+/// * `attrs`: The attributes on the item.
+/// * `namespace`: The `path()` of the first-level attribute.
+/// * `tag`: The `path()` of the second-level attribute.
+pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
+    attrs
+        .iter()
+        .map(Attribute::parse_meta)
+        .filter_map(Result::ok)
+        .filter(|meta| meta.path() == namespace)
+        .any(|meta| {
+            if let Meta::List(meta_list) = meta {
+                meta_list
+                    .nested
+                    .iter()
+                    .filter_map(|nested_meta| {
+                        if let NestedMeta::Meta(meta) = nested_meta {
+                            Some(meta)
+                        } else {
+                            None
+                        }
+                    })
+                    .any(|meta| meta.path() == tag)
+            } else {
+                false
+            }
+        })
+}
+
 /// Returns the parameter from `#[namespace(tag(parameter))]`.
 ///
 /// # Parameters

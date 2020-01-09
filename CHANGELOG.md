@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+* `util::contains_tag` supports checking if any list of attributes contains a `#[namespace(tag)]`.
+* `DeriveInputExt::contains_tag` supports checking if a type contains a `#[namespace(tag)]`.
+
 ## 0.6.0 (2019-10-01)
 
 * ***Breaking:*** `DeriveInputExt::tag_parameter` and `DeriveInputExt::tag_parameters` return `NestedMeta`.

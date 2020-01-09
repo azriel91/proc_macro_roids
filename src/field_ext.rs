@@ -1,4 +1,4 @@
-use syn::{Attribute, Field, Ident, Meta, NestedMeta, Path, PathSegment, Type, TypePath};
+use syn::{Field, Ident, NestedMeta, Path, PathSegment, Type, TypePath};
 
 use crate::util;
 
@@ -70,28 +70,7 @@ impl FieldExt for Field {
     }
 
     fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool {
-        self.attrs
-            .iter()
-            .map(Attribute::parse_meta)
-            .filter_map(Result::ok)
-            .filter(|meta| meta.path() == namespace)
-            .any(|meta| {
-                if let Meta::List(meta_list) = meta {
-                    meta_list
-                        .nested
-                        .iter()
-                        .filter_map(|nested_meta| {
-                            if let NestedMeta::Meta(meta) = nested_meta {
-                                Some(meta)
-                            } else {
-                                None
-                            }
-                        })
-                        .any(|meta| meta.path() == tag)
-                } else {
-                    false
-                }
-            })
+        util::contains_tag(&self.attrs, namespace, tag)
     }
 
     fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta> {
