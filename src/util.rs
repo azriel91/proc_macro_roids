@@ -8,9 +8,11 @@ use syn::{punctuated::Pair, Attribute, Ident, Meta, MetaList, NestedMeta, Path};
 ///
 /// * `nested_meta`: The `NestedMeta` to extract the `Path` from.
 pub fn nested_meta_to_path(nested_meta: &NestedMeta) -> Option<&Path> {
+    // kcov-ignore-start
     match nested_meta {
+        // kcov-ignore-end
         NestedMeta::Meta(meta) => Some(meta.path()),
-        NestedMeta::Lit(..) => None,
+        NestedMeta::Lit(..) => None, // kcov-ignore
     }
 }
 
@@ -60,14 +62,16 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
                         if let NestedMeta::Meta(meta) = nested_meta {
                             Some(meta)
                         } else {
-                            None
+                            None // kcov-ignore
                         }
                     })
                     .any(|meta| meta.path() == tag)
             } else {
                 false
             }
+            // kcov-ignore-start
         })
+    // kcov-ignore-end
 }
 
 /// Returns the parameter from `#[namespace(tag(parameter))]`.
@@ -169,7 +173,7 @@ pub fn tag_meta_list<'f>(
             if let NestedMeta::Meta(meta) = nested_meta {
                 Some(meta)
             } else {
-                None
+                None // kcov-ignore
             }
         })
         .filter(move |meta| meta.path() == tag)
@@ -178,7 +182,7 @@ pub fn tag_meta_list<'f>(
             if let Meta::List(meta_list) = meta {
                 Some(meta_list)
             } else {
-                None
+                None // kcov-ignore
             }
         })
 }
@@ -200,7 +204,7 @@ pub fn tag_meta_list_owned<'f>(
             if let NestedMeta::Meta(meta) = nested_meta {
                 Some(meta)
             } else {
-                None
+                None // kcov-ignore
             }
         })
         .filter(move |meta| meta.path() == tag)
@@ -209,7 +213,7 @@ pub fn tag_meta_list_owned<'f>(
             if let Meta::List(meta_list) = meta {
                 Some(meta_list)
             } else {
-                None
+                None // kcov-ignore
             }
         })
 }
