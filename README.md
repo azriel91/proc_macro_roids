@@ -76,6 +76,17 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
 
 ## Examples
 
+Contents:
+
+1. Append additional `#[derive(..)]`s.
+2. Append named fields.
+3. Append unnamed fields (tuples).
+4. Get newtype inner `Field`.
+5. `Ident` concatenation.
+6. Accessing struct fields.
+7. Inspecting `Field`s.
+8. (De)constructing `Fields`.
+
 1. Append additional `#[derive(..)]`s.
 
    This works for function-like or attribute proc macros.
@@ -265,7 +276,6 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
     use proc_macro2::Span;
     use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue, NestedMeta};
 
-    # fn main() {
     let fields_named: FieldsNamed = parse_quote! {{
         #[my::derive(tag::name(param = "value"))]
         pub name: PhantomData<T>,
@@ -287,7 +297,38 @@ pub fn system_desc_derive(input: TokenStream) -> TokenStream {
             lit: Lit::Str(LitStr::new("value", Span::call_site())),
         })),
     );
-    # }
+    ```
+
+8. (De)constructing `Fields`.
+
+    ```rust,edition2018
+    # use std::str::FromStr;
+    #
+    use proc_macro_roids::{DeriveInputStructExt, FieldsExt};
+    # use proc_macro2::{Span, TokenStream};
+    # use syn::{parse_quote, DeriveInput};
+    # use quote::quote;
+    #
+    // Need to generate code that instantiates `MyEnum::Struct`:
+    // enum MyEnum {
+    //     Struct {
+    //         field_0: u32,
+    //         field_1: u32,
+    //     }
+    // }
+
+    let ast: DeriveInput = parse_quote! {
+        struct Struct {
+            field_0: u32,
+            field_1: u32,
+        }
+    };
+    let fields = ast.fields();
+    let construction_form = fields.construction_form();
+    let tokens = quote! { MyEnum::Struct #construction_form };
+
+    let expected = TokenStream::from_str("MyEnum::Struct { field_0, field_1, }").unwrap();
+    assert_eq!(expected.to_string(), tokens.to_string());
     ```
 
 ## License
