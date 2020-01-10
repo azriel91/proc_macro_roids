@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.6.1 (2020-01-10)
 
 * `util::contains_tag` supports checking if any list of attributes contains a `#[namespace(tag)]`.
 * `DeriveInputExt::contains_tag` supports checking if a type contains a `#[namespace(tag)]`.
