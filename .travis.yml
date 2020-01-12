@@ -34,11 +34,8 @@ after_success: |
     make install DESTDIR=../../kcov-build &&
     cd ../.. &&
     rm -rf kcov-master &&
-    for file in target/debug/proc_macro_roids-*
-    do [ -x "${file}" ] || continue
-    mkdir -p "target/cov/$(basename $file)"
-    ./kcov-build/usr/local/bin/kcov --exclude-pattern=/.cargo,/usr/lib --exclude-line=kcov-ignore --exclude-region=kcov-ignore-start:kcov-ignore-end --verify "target/cov/$(basename $file)" "$file"
-    done &&
+    export PATH="${PATH}:$(pwd)/kcov-build/usr/local/bin/" &&
+    ./scripts/coverage.sh &&
     bash <(curl -s https://codecov.io/bash) &&
     echo "Uploaded code coverage"
   fi
