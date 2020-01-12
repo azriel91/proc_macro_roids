@@ -138,12 +138,15 @@ pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<
 ///
 /// * `attrs`: Attributes of the item to inspect.
 /// * `namespace`: The `path()` of the first-level attribute.
-pub fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaList> {
+pub fn namespace_meta_lists<'f>(
+    attrs: &'f [Attribute],
+    namespace: &'f Path,
+) -> impl Iterator<Item = MetaList> + 'f {
     attrs
         .iter()
         .map(Attribute::parse_meta)
         .filter_map(Result::ok)
-        .filter(|meta| meta.path() == namespace)
+        .filter(move |meta| meta.path() == namespace)
         .filter_map(|meta| {
             if let Meta::List(meta_list) = meta {
                 Some(meta_list)
@@ -151,7 +154,18 @@ pub fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaLi
                 None
             }
         })
-        .collect::<Vec<MetaList>>()
+}
+
+/// Returns the meta lists of the form: `#[namespace(..)]`.
+///
+/// Each `meta_list` is a `namespace(..)` meta item.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `path()` of the first-level attribute.
+pub fn namespace_meta_lists_owned(attrs: &[Attribute], namespace: &Path) -> Vec<MetaList> {
+    namespace_meta_lists(attrs, namespace).collect::<Vec<MetaList>>()
 }
 
 /// Returns an iterator over meta lists from `#[namespace(tag(..))]`.
@@ -194,11 +208,10 @@ pub fn tag_meta_list<'f>(
 /// * `namespace_meta_lists`: The `#[namespace(..)]` meta lists.
 /// * `tag`: The `path()` of the second-level attribute.
 pub fn tag_meta_list_owned<'f>(
-    namespace_meta_lists: Vec<MetaList>,
+    namespace_meta_lists: impl Iterator<Item = MetaList> + 'f,
     tag: &'f Path,
 ) -> impl Iterator<Item = MetaList> + 'f {
     namespace_meta_lists
-        .into_iter()
         .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
         .filter_map(|nested_meta| {
             if let NestedMeta::Meta(meta) = nested_meta {
