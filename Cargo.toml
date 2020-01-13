@@ -1,10 +1,11 @@
 [package]
 name = "proc_macro_roids"
-version = "0.6.1"
+version = "0.7.0"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
+edition = "2018"
 description = "Traits and functions to make writing proc macros more ergonomic."
 repository = "https://github.com/azriel91/proc_macro_roids"
-edition = "2018"
+documentation = "https://docs.rs/proc_macro_roids/"
 readme = "README.md"
 keywords = ["proc_macro", "macros"]
 license = "MIT OR Apache-2.0"
