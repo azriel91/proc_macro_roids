@@ -74,6 +74,108 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
     // kcov-ignore-end
 }
 
+/// Returns the parameter from `#[namespace(parameter)]`.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `path()` of the first-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::namespace_parameter;
+/// use syn::{parse_quote, DeriveInput, Meta, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(One)]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let namespace_param = namespace_parameter(&ast.attrs, &ns);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// assert_eq!(Some(param_one), namespace_param);
+///
+/// let ns_other: Path = parse_quote!(namespace_other);
+/// let namespace_param_other = namespace_parameter(&ast.attrs, &ns_other);
+/// assert_eq!(None, namespace_param_other);
+/// ```
+///
+/// # Panics
+///
+/// Panics if the number of parameters for the tag is not exactly one.
+#[allow(clippy::let_and_return)] // Needed due to bug in clippy.
+pub fn namespace_parameter(attrs: &[Attribute], namespace: &Path) -> Option<NestedMeta> {
+    let error_message = {
+        format!(
+            "Expected exactly one identifier for `#[{}(..)]`.",
+            format_path(namespace),
+        )
+    };
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let meta_param = namespace_meta_lists_iter
+        .map(|meta_list| {
+            if meta_list.nested.len() != 1 {
+                panic!("{}. `{:?}`", &error_message, &meta_list.nested);
+            }
+
+            meta_list
+                .nested
+                .into_pairs()
+                .map(Pair::into_value)
+                .next()
+                .expect("Expected one meta item to exist.")
+        })
+        .next();
+
+    meta_param
+}
+
+/// Returns the parameters from `#[namespace(param1, param2, ..)]`.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `path()` of the first-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::namespace_parameters;
+/// use syn::{parse_quote, DeriveInput, Lit, LitStr, Meta, MetaNameValue, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(One, two = "")]
+///     #[namespace("three")]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let namespace_parameters = namespace_parameters(&ast.attrs, &ns);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// let meta_two: MetaNameValue = parse_quote!(two = "");
+/// let param_two = NestedMeta::Meta(Meta::NameValue(meta_two));
+/// let meta_three: LitStr = parse_quote!("three");
+/// let param_three = NestedMeta::Lit(Lit::Str(meta_three));
+/// assert_eq!(
+///     vec![param_one, param_two, param_three],
+///     namespace_parameters
+/// );
+/// ```
+pub fn namespace_parameters(attrs: &[Attribute], namespace: &Path) -> Vec<NestedMeta> {
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let parameters = namespace_meta_lists_iter
+        .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
+        .collect::<Vec<NestedMeta>>();
+
+    parameters
+}
+
 /// Returns the parameter from `#[namespace(tag(parameter))]`.
 ///
 /// # Parameters
@@ -81,6 +183,30 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
 /// * `attrs`: Attributes of the item to inspect.
 /// * `namespace`: The `path()` of the first-level attribute.
 /// * `tag`: The `path()` of the second-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::tag_parameter;
+/// use syn::{parse_quote, DeriveInput, Meta, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(tag(One))]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let tag: Path = parse_quote!(tag);
+/// let tag_param = tag_parameter(&ast.attrs, &ns, &tag);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// assert_eq!(Some(param_one), tag_param);
+///
+/// let tag_other: Path = parse_quote!(tag_other);
+/// let tag_param_other = tag_parameter(&ast.attrs, &ns, &tag_other);
+/// assert_eq!(None, tag_param_other);
+/// ```
 ///
 /// # Panics
 ///
@@ -94,9 +220,8 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
             format_path(tag),
         )
     };
-    let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
-    let meta_param = tag_meta_list_owned(namespace_meta_lists, tag)
-        // We want to insert a resource for each item in the list.
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let meta_param = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag)
         .map(|meta_list| {
             if meta_list.nested.len() != 1 {
                 panic!("{}. `{:?}`", &error_message, &meta_list.nested);
@@ -121,9 +246,32 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
 /// * `attrs`: Attributes of the item to inspect.
 /// * `namespace`: The `path()` of the first-level attribute.
 /// * `tag`: The `path()` of the second-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::tag_parameters;
+/// use syn::{parse_quote, DeriveInput, Meta, MetaNameValue, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(tag(One))]
+///     #[namespace(tag(two = ""))]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let tag: Path = parse_quote!(tag);
+/// let tag_parameters = tag_parameters(&ast.attrs, &ns, &tag);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// let meta_two: MetaNameValue = parse_quote!(two = "");
+/// let param_two = NestedMeta::Meta(Meta::NameValue(meta_two));
+/// assert_eq!(vec![param_one, param_two], tag_parameters);
+/// ```
 pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<NestedMeta> {
-    let namespace_meta_lists = namespace_meta_lists(attrs, namespace);
-    let parameters = tag_meta_list_owned(namespace_meta_lists, tag)
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let parameters = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag)
         .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
         .collect::<Vec<NestedMeta>>();
 
@@ -138,12 +286,35 @@ pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<
 ///
 /// * `attrs`: Attributes of the item to inspect.
 /// * `namespace`: The `path()` of the first-level attribute.
-pub fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaList> {
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::namespace_meta_lists_iter;
+/// use syn::{parse_quote, DeriveInput, MetaList, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(One)]
+///     #[namespace(two = "")]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let lists = namespace_meta_lists_iter(&ast.attrs, &ns).collect::<Vec<MetaList>>();
+///
+/// let list_one: MetaList = parse_quote!(namespace(One));
+/// let list_two: MetaList = parse_quote!(namespace(two = ""));
+/// assert_eq!(vec![list_one, list_two], lists);
+/// ```
+pub fn namespace_meta_lists_iter<'f>(
+    attrs: &'f [Attribute],
+    namespace: &'f Path,
+) -> impl Iterator<Item = MetaList> + 'f {
     attrs
         .iter()
         .map(Attribute::parse_meta)
         .filter_map(Result::ok)
-        .filter(|meta| meta.path() == namespace)
+        .filter(move |meta| meta.path() == namespace)
         .filter_map(|meta| {
             if let Meta::List(meta_list) = meta {
                 Some(meta_list)
@@ -151,22 +322,73 @@ pub fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaLi
                 None
             }
         })
-        .collect::<Vec<MetaList>>()
+}
+
+/// Returns the meta lists of the form: `#[namespace(..)]`.
+///
+/// Each `meta_list` is a `namespace(..)` meta item.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `path()` of the first-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::namespace_meta_lists;
+/// use syn::{parse_quote, DeriveInput, MetaList, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(One)]
+///     #[namespace(two = "")]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let lists = namespace_meta_lists(&ast.attrs, &ns);
+///
+/// let list_one: MetaList = parse_quote!(namespace(One));
+/// let list_two: MetaList = parse_quote!(namespace(two = ""));
+/// assert_eq!(vec![list_one, list_two], lists);
+pub fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaList> {
+    namespace_meta_lists_iter(attrs, namespace).collect::<Vec<MetaList>>()
 }
 
 /// Returns an iterator over meta lists from `#[namespace(tag(..))]`.
 ///
-/// For an owned version of the iterator, see `tag_meta_list_owned`
+/// For an owned version of the iterator, see `tag_meta_lists_owned_iter`
 ///
 /// # Parameters
 ///
-/// * `namespace_meta_lists`: The `#[namespace(..)]` meta lists.
+/// * `namespace_meta_lists_iter`: The `#[namespace(..)]` meta lists.
 /// * `tag`: The `path()` of the second-level attribute.
-pub fn tag_meta_list<'f>(
-    namespace_meta_lists: &'f [MetaList],
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::{namespace_meta_lists, tag_meta_lists_iter};
+/// use syn::{parse_quote, DeriveInput, MetaList, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(tag(One))]
+///     #[namespace(tag(two = ""))]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let tag: Path = parse_quote!(tag);
+/// let ns_lists = namespace_meta_lists(&ast.attrs, &ns);
+/// let lists = tag_meta_lists_iter(&ns_lists, &tag).collect::<Vec<&MetaList>>();
+///
+/// let list_one: MetaList = parse_quote!(tag(One));
+/// let list_two: MetaList = parse_quote!(tag(two = ""));
+/// assert_eq!(vec![&list_one, &list_two], lists);
+pub fn tag_meta_lists_iter<'f>(
+    namespace_meta_lists_iter: &'f [MetaList],
     tag: &'f Path,
 ) -> impl Iterator<Item = &'f MetaList> + 'f {
-    namespace_meta_lists
+    namespace_meta_lists_iter
         .iter()
         .flat_map(|meta_list| meta_list.nested.iter())
         .filter_map(|nested_meta| {
@@ -191,14 +413,34 @@ pub fn tag_meta_list<'f>(
 ///
 /// # Parameters
 ///
-/// * `namespace_meta_lists`: The `#[namespace(..)]` meta lists.
+/// * `namespace_meta_lists_iter`: The `#[namespace(..)]` meta lists.
 /// * `tag`: The `path()` of the second-level attribute.
-pub fn tag_meta_list_owned<'f>(
-    namespace_meta_lists: Vec<MetaList>,
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::{namespace_meta_lists_iter, tag_meta_lists_owned_iter};
+/// use syn::{parse_quote, DeriveInput, MetaList, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(tag(One))]
+///     #[namespace(tag(two = ""))]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let tag: Path = parse_quote!(tag);
+/// let ns_lists_iter = namespace_meta_lists_iter(&ast.attrs, &ns);
+/// let lists = tag_meta_lists_owned_iter(ns_lists_iter, &tag).collect::<Vec<MetaList>>();
+///
+/// let list_one: MetaList = parse_quote!(tag(One));
+/// let list_two: MetaList = parse_quote!(tag(two = ""));
+/// assert_eq!(vec![list_one, list_two], lists);
+pub fn tag_meta_lists_owned_iter<'f>(
+    namespace_meta_lists_iter: impl Iterator<Item = MetaList> + 'f,
     tag: &'f Path,
 ) -> impl Iterator<Item = MetaList> + 'f {
-    namespace_meta_lists
-        .into_iter()
+    namespace_meta_lists_iter
         .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
         .filter_map(|nested_meta| {
             if let NestedMeta::Meta(meta) = nested_meta {

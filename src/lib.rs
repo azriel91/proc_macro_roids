@@ -341,7 +341,8 @@ pub use crate::{
     ident_ext::IdentExt,
     util::{
         contains_tag, format_path, ident_concat, meta_list_contains, namespace_meta_lists,
-        nested_meta_to_path, tag_meta_list, tag_meta_list_owned, tag_parameter, tag_parameters,
+        namespace_meta_lists_iter, namespace_parameter, namespace_parameters, nested_meta_to_path,
+        tag_meta_lists_iter, tag_meta_lists_owned_iter, tag_parameter, tag_parameters,
     },
 };
 
