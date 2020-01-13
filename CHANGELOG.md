@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+* `util::namespace_parameter` returns an `Option<NestedMeta>`.
+* `util::namespace_parameters` returns a `Vec<NestedMeta>`.
+* ***Breaking:*** `util::namespace_meta_lists_iter` returns an `impl Iterator<Item = MetaList>`.
+* ***Breaking:*** `util::tag_meta_list` renamed to `util::tag_meta_lists_iter`.
+* ***Breaking:*** `util::tag_meta_list_owned` renamed to `util::tag_meta_lists_owned_iter`.
+* ***Breaking:*** `util::tag_meta_lists_owned_iter` takes in `impl Iterator<Item = MetaList>` instead of `Vec<MetaList>`.
+
 ## 0.6.1 (2020-01-10)
 
 * `util::contains_tag` supports checking if any list of attributes contains a `#[namespace(tag)]`.
