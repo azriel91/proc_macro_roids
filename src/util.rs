@@ -82,6 +82,30 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
 /// * `namespace`: The `path()` of the first-level attribute.
 /// * `tag`: The `path()` of the second-level attribute.
 ///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::tag_parameter;
+/// use syn::{parse_quote, DeriveInput, Meta, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(tag(One))]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let tag: Path = parse_quote!(tag);
+/// let tag_param = tag_parameter(&ast.attrs, &ns, &tag);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// assert_eq!(Some(param_one), tag_param);
+///
+/// let tag_other: Path = parse_quote!(tag_other);
+/// let tag_param_other = tag_parameter(&ast.attrs, &ns, &tag_other);
+/// assert_eq!(None, tag_param_other);
+/// ```
+///
 /// # Panics
 ///
 /// Panics if the number of parameters for the tag is not exactly one.
@@ -121,6 +145,29 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
 /// * `attrs`: Attributes of the item to inspect.
 /// * `namespace`: The `path()` of the first-level attribute.
 /// * `tag`: The `path()` of the second-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::tag_parameters;
+/// use syn::{parse_quote, DeriveInput, Meta, MetaNameValue, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(tag(One))]
+///     #[namespace(tag(two = ""))]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let tag: Path = parse_quote!(tag);
+/// let tag_parameters = tag_parameters(&ast.attrs, &ns, &tag);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// let meta_two: MetaNameValue = parse_quote!(two = "");
+/// let param_two = NestedMeta::Meta(Meta::NameValue(meta_two));
+/// assert_eq!(vec![param_one, param_two], tag_parameters);
+/// ```
 pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<NestedMeta> {
     let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
     let parameters = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag)
