@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.7.0 (2020-01-13)
 
 * `util::namespace_parameter` returns an `Option<NestedMeta>`.
 * `util::namespace_parameters` returns a `Vec<NestedMeta>`.
