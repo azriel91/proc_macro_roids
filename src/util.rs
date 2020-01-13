@@ -74,6 +74,108 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
     // kcov-ignore-end
 }
 
+/// Returns the parameter from `#[namespace(parameter)]`.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `path()` of the first-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::namespace_parameter;
+/// use syn::{parse_quote, DeriveInput, Meta, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(One)]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let namespace_param = namespace_parameter(&ast.attrs, &ns);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// assert_eq!(Some(param_one), namespace_param);
+///
+/// let ns_other: Path = parse_quote!(namespace_other);
+/// let namespace_param_other = namespace_parameter(&ast.attrs, &ns_other);
+/// assert_eq!(None, namespace_param_other);
+/// ```
+///
+/// # Panics
+///
+/// Panics if the number of parameters for the tag is not exactly one.
+#[allow(clippy::let_and_return)] // Needed due to bug in clippy.
+pub fn namespace_parameter(attrs: &[Attribute], namespace: &Path) -> Option<NestedMeta> {
+    let error_message = {
+        format!(
+            "Expected exactly one identifier for `#[{}(..)]`.",
+            format_path(namespace),
+        )
+    };
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let meta_param = namespace_meta_lists_iter
+        .map(|meta_list| {
+            if meta_list.nested.len() != 1 {
+                panic!("{}. `{:?}`", &error_message, &meta_list.nested);
+            }
+
+            meta_list
+                .nested
+                .into_pairs()
+                .map(Pair::into_value)
+                .next()
+                .expect("Expected one meta item to exist.")
+        })
+        .next();
+
+    meta_param
+}
+
+/// Returns the parameters from `#[namespace(param1, param2, ..)]`.
+///
+/// # Parameters
+///
+/// * `attrs`: Attributes of the item to inspect.
+/// * `namespace`: The `path()` of the first-level attribute.
+///
+/// # Examples
+///
+/// ```rust
+/// use proc_macro_roids::namespace_parameters;
+/// use syn::{parse_quote, DeriveInput, Lit, LitStr, Meta, MetaNameValue, NestedMeta, Path};
+///
+/// let ast: DeriveInput = parse_quote! {
+///     #[namespace(One, two = "")]
+///     #[namespace("three")]
+///     pub struct MyEnum;
+/// };
+///
+/// let ns: Path = parse_quote!(namespace);
+/// let namespace_parameters = namespace_parameters(&ast.attrs, &ns);
+///
+/// let meta_one: Path = parse_quote!(One);
+/// let param_one = NestedMeta::Meta(Meta::Path(meta_one));
+/// let meta_two: MetaNameValue = parse_quote!(two = "");
+/// let param_two = NestedMeta::Meta(Meta::NameValue(meta_two));
+/// let meta_three: LitStr = parse_quote!("three");
+/// let param_three = NestedMeta::Lit(Lit::Str(meta_three));
+/// assert_eq!(
+///     vec![param_one, param_two, param_three],
+///     namespace_parameters
+/// );
+/// ```
+pub fn namespace_parameters(attrs: &[Attribute], namespace: &Path) -> Vec<NestedMeta> {
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let parameters = namespace_meta_lists_iter
+        .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
+        .collect::<Vec<NestedMeta>>();
+
+    parameters
+}
+
 /// Returns the parameter from `#[namespace(tag(parameter))]`.
 ///
 /// # Parameters
@@ -120,7 +222,6 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
     };
     let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
     let meta_param = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag)
-        // We want to insert a resource for each item in the list.
         .map(|meta_list| {
             if meta_list.nested.len() != 1 {
                 panic!("{}. `{:?}`", &error_message, &meta_list.nested);
