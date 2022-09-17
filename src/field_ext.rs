@@ -253,7 +253,8 @@ mod tests {
                     assert!(
                         // kcov-ignore-end
                         !field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-                        assertion_message // kcov-ignore
+                        "{}",              // kcov-ignore
+                        assertion_message  // kcov-ignore
                     );
 
                     Ok(())
@@ -317,7 +318,8 @@ mod tests {
                     assert!(
                         // kcov-ignore-end
                         !field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-                        assertion_message // kcov-ignore
+                        "{}",              // kcov-ignore
+                        assertion_message  // kcov-ignore
                     );
 
                     Ok(())

@@ -24,7 +24,7 @@ impl FieldsNamedAppend for Fields {
         match self {
             Fields::Named(self_fields_named) => self_fields_named.append_named(fields_named),
             Fields::Unit => *self = Fields::from(fields_named),
-            Fields::Unnamed(_) => panic!(ERR_MUST_BE_UNIT_OR_NAMED),
+            Fields::Unnamed(_) => panic!("{}", ERR_MUST_BE_UNIT_OR_NAMED),
         }
     }
 }
@@ -37,7 +37,6 @@ impl FieldsNamedAppend for FieldsNamed {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
     use syn::{parse_quote, DeriveInput, Fields, FieldsNamed};
 
     use super::FieldsNamedAppend;

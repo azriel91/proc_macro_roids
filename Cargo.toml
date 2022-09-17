@@ -15,9 +15,6 @@ proc-macro2 = "1.0.7"
 quote = "1.0.2"
 syn = { version = "1.0.13", features = ["extra-traits", "visit"] }
 
-[dev-dependencies]
-pretty_assertions = "0.6.1"
-
 [badges]
 appveyor = { repository = "azriel91/proc_macro_roids" }
 travis-ci = { repository = "azriel91/proc_macro_roids" }

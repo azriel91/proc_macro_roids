@@ -1,11 +1,9 @@
 use syn::{Data, DataStruct, DeriveInput, Field, Fields};
 
-const NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD: &str =
-    "Newtype struct must only have one field.\n\
+const NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD: &str = "Newtype struct must only have one field.\n\
      See https://doc.rust-lang.org/book/ch19-04-advanced-types.html#advanced-types \
      for more information.";
-const MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT: &str =
-    "This macro must be used on a newtype struct.\n\
+const MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT: &str = "This macro must be used on a newtype struct.\n\
      See https://doc.rust-lang.org/book/ch19-04-advanced-types.html#advanced-types \
      for more information.";
 
@@ -42,10 +40,10 @@ impl DeriveInputNewtypeExt for DeriveInput {
                     .first()
                     .expect("Expected field to exist.")
             } else {
-                panic!(NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD)
+                panic!("{}", NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD)
             }
         } else {
-            panic!(MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT)
+            panic!("{}", MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT)
         }
     }
 
@@ -64,10 +62,10 @@ impl DeriveInputNewtypeExt for DeriveInput {
             // kcov-ignore-start
             } else {
                 // kcov-ignore-end
-                panic!(NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD)
+                panic!("{}", NEWTYPE_MUST_HAVE_ONLY_ONE_FIELD)
             }
         } else {
-            panic!(MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT)
+            panic!("{}", MACRO_MUST_BE_USED_ON_NEWTYPE_STRUCT)
         }
     }
 

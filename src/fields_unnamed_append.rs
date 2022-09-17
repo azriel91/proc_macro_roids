@@ -21,7 +21,7 @@ impl FieldsUnnamedAppend for DeriveInput {
 impl FieldsUnnamedAppend for Fields {
     fn append_unnamed(&mut self, fields_unnamed: FieldsUnnamed) {
         match self {
-            Fields::Named(_) => panic!(ERR_MUST_BE_UNIT_OR_UNNAMED),
+            Fields::Named(_) => panic!("{}", ERR_MUST_BE_UNIT_OR_UNNAMED),
             Fields::Unit => *self = Fields::from(fields_unnamed),
             Fields::Unnamed(self_fields_unnamed) => {
                 self_fields_unnamed.append_unnamed(fields_unnamed)
@@ -38,7 +38,6 @@ impl FieldsUnnamedAppend for FieldsUnnamed {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
     use syn::{parse_quote, DeriveInput, Fields, FieldsUnnamed};
 
     use super::FieldsUnnamedAppend;

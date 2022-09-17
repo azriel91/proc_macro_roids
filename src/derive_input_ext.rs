@@ -118,7 +118,6 @@ impl DeriveInputExt for DeriveInput {
 
 #[cfg(test)]
 mod tests {
-    use pretty_assertions::assert_eq;
     use proc_macro2::Span;
     use quote::quote;
     use syn::{parse_quote, DeriveInput, Error, Lit, Meta, NestedMeta};
@@ -218,7 +217,8 @@ mod tests {
                 assert!(
                     // kcov-ignore-end
                     !ast.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-                    assertion_message // kcov-ignore
+                    "{}",              // kcov-ignore
+                    assertion_message  // kcov-ignore
                 );
 
                 Ok(())
