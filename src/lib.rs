@@ -242,14 +242,20 @@
 //! <summary>5. `Ident` concatenation.</summary>
 //!
 //! ```rust,edition2018
-//! use proc_macro_roids::IdentExt;
 //! use proc_macro2::Span;
+//! use proc_macro_roids::IdentExt;
 //! use syn::Ident;
 //!
 //! # fn main() {
 //! let one = Ident::new("One", Span::call_site());
-//! assert_eq!(Ident::new("OneSuffix", Span::call_site()), one.append("Suffix"));
-//! assert_eq!(Ident::new("PrefixOne", Span::call_site()), one.prepend("Prefix"));
+//! assert_eq!(
+//!     Ident::new("OneSuffix", Span::call_site()),
+//!     one.append("Suffix")
+//! );
+//! assert_eq!(
+//!     Ident::new("PrefixOne", Span::call_site()),
+//!     one.prepend("Prefix")
+//! );
 //!
 //! let two = Ident::new("Two", Span::call_site());
 //! assert_eq!(Ident::new("OneTwo", Span::call_site()), one.append(&two));
@@ -285,8 +291,8 @@
 //! <summary>7. Inspecting `Field`s.</summary>
 //!
 //! ```rust,edition2018
-//! use proc_macro_roids::FieldExt;
 //! use proc_macro2::Span;
+//! use proc_macro_roids::FieldExt;
 //! use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue, NestedMeta};
 //!
 //! let fields_named: FieldsNamed = parse_quote! {{
@@ -300,10 +306,9 @@
 //! assert!(field.is_phantom_data());
 //! assert!(field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)));
 //! assert_eq!(
-//!     field.tag_parameter(
-//!         &parse_quote!(my::derive),
-//!         &parse_quote!(tag::name),
-//!     ).expect("Expected parameter to exist."),
+//!     field
+//!         .tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name),)
+//!         .expect("Expected parameter to exist."),
 //!     NestedMeta::Meta(Meta::NameValue(MetaNameValue {
 //!         path: parse_quote!(param),
 //!         eq_token: Default::default(),
@@ -368,9 +373,9 @@ pub use crate::{
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
     util::{
-        contains_tag, format_path, ident_concat, meta_list_contains, namespace_meta_lists,
-        namespace_meta_lists_iter, namespace_parameter, namespace_parameters, nested_meta_to_path,
-        tag_meta_lists_iter, tag_meta_lists_owned_iter, tag_parameter, tag_parameters,
+        contains_tag, format_path, ident_concat, namespace_meta_lists, namespace_meta_lists_iter,
+        namespace_parameter, namespace_parameters, tag_meta_lists_iter, tag_meta_lists_owned_iter,
+        tag_parameter, tag_parameters,
     },
 };
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## unreleased
+
+syn 2 upgrade. All of the changes are **Breaking**, and so have not been highlighted as such.
+
+* `DeriveInputExt::append_derives` parameters changed from `NestedMeta` to `syn::Path`.
+* `DeriveInputExt::tag_parameter` return type changed from `NestedMeta` to `Meta`.
+* `DeriveInputExt::tag_parameters` return type changed from `NestedMeta` to `Meta`.
+* `util::nested_meta_to_path` is removed.
+* `util::meta_list_contains` is removed.
+
+
 ## 0.7.0 (2020-01-13)
 
 * `util::namespace_parameter` returns an `Option<NestedMeta>`.

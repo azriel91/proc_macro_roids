@@ -1,35 +1,6 @@
 use proc_macro2::Span;
 use quote::quote;
-use syn::{punctuated::Pair, Attribute, Ident, Meta, MetaList, NestedMeta, Path};
-
-/// Returns the `Path` of a nested meta. If it is a literal, `None` is returned.
-///
-/// # Parameters
-///
-/// * `nested_meta`: The `NestedMeta` to extract the `Path` from.
-pub fn nested_meta_to_path(nested_meta: &NestedMeta) -> Option<&Path> {
-    // kcov-ignore-start
-    match nested_meta {
-        // kcov-ignore-end
-        NestedMeta::Meta(meta) => Some(meta.path()),
-        NestedMeta::Lit(..) => None, // kcov-ignore
-    }
-}
-
-/// Returns whether the `MetaList` contains the specified `NestedMeta`.
-///
-/// This can be used to check if a `#[derive(..)]` contains `SomeDerive`.
-///
-/// # Parameters
-///
-/// * `meta_list`: The `MetaList` to check.
-/// * `operand`: `NestedMeta` that may be in the list.
-pub fn meta_list_contains(meta_list: &MetaList, operand: &NestedMeta) -> bool {
-    meta_list
-        .nested
-        .iter()
-        .any(|nested_meta| nested_meta == operand)
-}
+use syn::{punctuated::Punctuated, Attribute, Ident, Meta, MetaList, Path, Token};
 
 /// Returns an `Ident` by concatenating `String` representations.
 pub fn ident_concat(left: &str, right: &str) -> Ident {
@@ -50,22 +21,11 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
 pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
     attrs
         .iter()
-        .map(Attribute::parse_meta)
-        .filter_map(Result::ok)
-        .filter(|meta| meta.path() == namespace)
-        .any(|meta| {
-            if let Meta::List(meta_list) = meta {
-                meta_list
-                    .nested
-                    .iter()
-                    .filter_map(|nested_meta| {
-                        if let NestedMeta::Meta(meta) = nested_meta {
-                            Some(meta)
-                        } else {
-                            None // kcov-ignore
-                        }
-                    })
-                    .any(|meta| meta.path() == tag)
+        .filter(|attr| attr.path() == namespace)
+        .any(|attr| {
+            let tags = attr.parse_args_with(Punctuated::<Path, Token![,]>::parse_terminated);
+            if let Ok(tags) = tags {
+                tags.iter().any(|tag_existing| tag_existing == tag)
             } else {
                 false
             }
@@ -85,7 +45,7 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
 ///
 /// ```rust
 /// use proc_macro_roids::namespace_parameter;
-/// use syn::{parse_quote, DeriveInput, Meta, NestedMeta, Path};
+/// use syn::{parse_quote, DeriveInput, Meta, Path};
 ///
 /// let ast: DeriveInput = parse_quote! {
 ///     #[namespace(One)]
@@ -108,30 +68,19 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
 ///
 /// Panics if the number of parameters for the tag is not exactly one.
 #[allow(clippy::let_and_return)] // Needed due to bug in clippy.
-pub fn namespace_parameter(attrs: &[Attribute], namespace: &Path) -> Option<NestedMeta> {
-    let error_message = {
-        format!(
-            "Expected exactly one identifier for `#[{}(..)]`.",
+pub fn namespace_parameter(attrs: &[Attribute], namespace: &Path) -> Option<MetaList> {
+    let mut namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let namespace_parameter = namespace_meta_lists_iter.next();
+    let namespace_parameter_second = namespace_meta_lists_iter.next();
+
+    if namespace_parameter_second.is_some() {
+        panic!(
+            "Expected exactly one parameter for `#[{}(..)]`.",
             format_path(namespace),
-        )
-    };
-    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
-    let meta_param = namespace_meta_lists_iter
-        .map(|meta_list| {
-            if meta_list.nested.len() != 1 {
-                panic!("{}. `{:?}`", &error_message, &meta_list.nested);
-            }
+        );
+    }
 
-            meta_list
-                .nested
-                .into_pairs()
-                .map(Pair::into_value)
-                .next()
-                .expect("Expected one meta item to exist.")
-        })
-        .next();
-
-    meta_param
+    namespace_parameter
 }
 
 /// Returns the parameters from `#[namespace(param1, param2, ..)]`.
@@ -167,11 +116,9 @@ pub fn namespace_parameter(attrs: &[Attribute], namespace: &Path) -> Option<Nest
 ///     namespace_parameters
 /// );
 /// ```
-pub fn namespace_parameters(attrs: &[Attribute], namespace: &Path) -> Vec<NestedMeta> {
+pub fn namespace_parameters(attrs: &[Attribute], namespace: &Path) -> Vec<MetaList> {
     let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
-    let parameters = namespace_meta_lists_iter
-        .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
-        .collect::<Vec<NestedMeta>>();
+    let parameters = namespace_meta_lists_iter.collect::<Vec<MetaList>>();
 
     parameters
 }
@@ -212,31 +159,21 @@ pub fn namespace_parameters(attrs: &[Attribute], namespace: &Path) -> Vec<Nested
 ///
 /// Panics if the number of parameters for the tag is not exactly one.
 #[allow(clippy::let_and_return)] // Needed due to bug in clippy.
-pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Option<NestedMeta> {
-    let error_message = {
-        format!(
-            "Expected exactly one identifier for `#[{}({}(..))]`.",
+pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Option<Meta> {
+    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
+    let mut tag_meta_lists_owned_iter = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag);
+    let tag_param = tag_meta_lists_owned_iter.next();
+    let tag_param_second = tag_meta_lists_owned_iter.next();
+
+    if tag_param_second.is_some() {
+        panic!(
+            "Expected exactly one parameter for `#[{}({}(..))]`.",
             format_path(namespace),
             format_path(tag),
-        )
-    };
-    let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
-    let meta_param = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag)
-        .map(|meta_list| {
-            if meta_list.nested.len() != 1 {
-                panic!("{}. `{:?}`", &error_message, &meta_list.nested);
-            }
+        );
+    }
 
-            meta_list
-                .nested
-                .into_pairs()
-                .map(Pair::into_value)
-                .next()
-                .expect("Expected one meta item to exist.")
-        })
-        .next();
-
-    meta_param
+    tag_param
 }
 
 /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
@@ -269,11 +206,10 @@ pub fn tag_parameter(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Optio
 /// let param_two = NestedMeta::Meta(Meta::NameValue(meta_two));
 /// assert_eq!(vec![param_one, param_two], tag_parameters);
 /// ```
-pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<NestedMeta> {
+pub fn tag_parameters(attrs: &[Attribute], namespace: &Path, tag: &Path) -> Vec<Meta> {
     let namespace_meta_lists_iter = namespace_meta_lists_iter(attrs, namespace);
-    let parameters = tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag)
-        .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
-        .collect::<Vec<NestedMeta>>();
+    let parameters =
+        tag_meta_lists_owned_iter(namespace_meta_lists_iter, tag).collect::<Vec<Meta>>();
 
     parameters
 }
@@ -312,16 +248,15 @@ pub fn namespace_meta_lists_iter<'f>(
 ) -> impl Iterator<Item = MetaList> + 'f {
     attrs
         .iter()
-        .map(Attribute::parse_meta)
-        .filter_map(Result::ok)
-        .filter(move |meta| meta.path() == namespace)
-        .filter_map(|meta| {
-            if let Meta::List(meta_list) = meta {
-                Some(meta_list)
+        .filter_map(move |attr| {
+            if attr.path() == namespace {
+                attr.parse_args_with(Punctuated::<MetaList, Token![,]>::parse_terminated)
+                    .ok()
             } else {
                 None
             }
         })
+        .flat_map(|punctuated_meta_lists| punctuated_meta_lists.into_iter())
 }
 
 /// Returns the meta lists of the form: `#[namespace(..)]`.
@@ -387,26 +322,16 @@ pub fn namespace_meta_lists(attrs: &[Attribute], namespace: &Path) -> Vec<MetaLi
 pub fn tag_meta_lists_iter<'f>(
     namespace_meta_lists_iter: &'f [MetaList],
     tag: &'f Path,
-) -> impl Iterator<Item = &'f MetaList> + 'f {
+) -> impl Iterator<Item = MetaList> + 'f {
     namespace_meta_lists_iter
         .iter()
-        .flat_map(|meta_list| meta_list.nested.iter())
-        .filter_map(|nested_meta| {
-            if let NestedMeta::Meta(meta) = nested_meta {
-                Some(meta)
-            } else {
-                None // kcov-ignore
-            }
+        .filter_map(|meta_list| {
+            meta_list
+                .parse_args_with(Punctuated::<MetaList, Token![,]>::parse_terminated)
+                .ok()
         })
-        .filter(move |meta| meta.path() == tag)
-        // `meta` is the `tag(..)` item.
-        .filter_map(|meta| {
-            if let Meta::List(meta_list) = meta {
-                Some(meta_list)
-            } else {
-                None // kcov-ignore
-            }
-        })
+        .flatten()
+        .filter(move |meta| &meta.path == tag)
 }
 
 /// Returns an iterator over meta lists from `#[namespace(tag(..))]`.
@@ -439,25 +364,18 @@ pub fn tag_meta_lists_iter<'f>(
 pub fn tag_meta_lists_owned_iter<'f>(
     namespace_meta_lists_iter: impl Iterator<Item = MetaList> + 'f,
     tag: &'f Path,
-) -> impl Iterator<Item = MetaList> + 'f {
+) -> impl Iterator<Item = Meta> + 'f {
     namespace_meta_lists_iter
-        .flat_map(|meta_list| meta_list.nested.into_pairs().map(Pair::into_value))
-        .filter_map(|nested_meta| {
-            if let NestedMeta::Meta(meta) = nested_meta {
-                Some(meta)
+        .filter_map(move |meta_list| {
+            if &meta_list.path == tag {
+                meta_list
+                    .parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
+                    .ok()
             } else {
-                None // kcov-ignore
+                None
             }
         })
-        .filter(move |meta| meta.path() == tag)
-        // `meta` is the `tag(..)` item.
-        .filter_map(|meta| {
-            if let Meta::List(meta_list) = meta {
-                Some(meta_list)
-            } else {
-                None // kcov-ignore
-            }
-        })
+        .flatten()
 }
 
 /// Returns a `Path` as a String without whitespace between tokens.

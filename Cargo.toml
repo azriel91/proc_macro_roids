@@ -11,9 +11,9 @@ keywords = ["proc_macro", "macros"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-proc-macro2 = "1.0.7"
-quote = "1.0.2"
-syn = { version = "1.0.13", features = ["extra-traits", "visit"] }
+proc-macro2 = "1.0.59"
+quote = "1.0.28"
+syn = { version = "2.0.18", features = ["extra-traits", "visit"] }
 
 [badges]
 appveyor = { repository = "azriel91/proc_macro_roids" }

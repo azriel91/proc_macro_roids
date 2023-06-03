@@ -1,8 +1,6 @@
-use syn::{
-    parse_quote, punctuated::Punctuated, Attribute, DeriveInput, Meta, NestedMeta, Path, Token,
-};
+use syn::{parse_quote, punctuated::Punctuated, Attribute, DeriveInput, Meta, Path, Token};
 
-use crate::{meta_list_contains, nested_meta_to_path, util};
+use crate::util;
 
 /// Functions to make it ergonomic to work with `struct` ASTs.
 pub trait DeriveInputExt {
@@ -22,7 +20,7 @@ pub trait DeriveInputExt {
     ///
     /// [*attribute*]: <https://doc.rust-lang.org/reference/procedural-macros.html#attribute-macros>
     /// [*derive*]: <https://doc.rust-lang.org/reference/procedural-macros.html#derive-mode-macros>
-    fn append_derives(&mut self, derives: Punctuated<NestedMeta, Token![,]>);
+    fn append_derives(&mut self, derives: Punctuated<Path, Token![,]>);
 
     /// Returns whether the type contains a given `#[namespace(tag)]` attribute.
     ///
@@ -42,7 +40,7 @@ pub trait DeriveInputExt {
     /// # Panics
     ///
     /// Panics if there is more than one parameter for the tag.
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta>;
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta>;
 
     /// Returns the parameters from `#[namespace(tag(param1, param2, ..))]`.
     ///
@@ -50,18 +48,20 @@ pub trait DeriveInputExt {
     ///
     /// * `namespace`: The `path()` of the first-level attribute.
     /// * `tag`: The `path()` of the second-level attribute.
-    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<NestedMeta>;
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta>;
 }
 
 impl DeriveInputExt for DeriveInput {
-    fn append_derives(&mut self, derives_to_append: Punctuated<NestedMeta, Token![,]>) {
+    fn append_derives(&mut self, derives_to_append: Punctuated<Path, Token![,]>) {
         let attr_derives_existing = self
             .attrs
             .iter_mut()
-            .filter(|attr| attr.path.is_ident("derive"))
-            .filter_map(|attr| match attr.parse_meta() {
-                Ok(Meta::List(meta_list)) => Some((attr, meta_list)),
-                _ => None, // kcov-ignore
+            .filter(|attr| attr.path().is_ident("derive"))
+            .filter_map(|attr| {
+                match attr.parse_args_with(Punctuated::<Path, Token![,]>::parse_terminated) {
+                    Ok(derives_existing) => Some((attr, derives_existing)),
+                    _ => None, // kcov-ignore
+                }
             })
             .next();
 
@@ -69,8 +69,11 @@ impl DeriveInputExt for DeriveInput {
             // Emit warning if the user derives any of the existing derives, as we do that for them.
             let superfluous = derives_to_append
                 .iter()
-                .filter(|derive_to_append| meta_list_contains(&derives_existing, derive_to_append))
-                .filter_map(nested_meta_to_path)
+                .filter(|derive_to_append| {
+                    derives_existing
+                        .iter()
+                        .any(|derive_existing| derive_existing == *derive_to_append)
+                })
                 .map(util::format_path)
                 .collect::<Vec<_>>();
             if !superfluous.is_empty() {
@@ -87,14 +90,13 @@ impl DeriveInputExt for DeriveInput {
                     superfluous
                 );
             } else {
-                // derives_existing.nested.push_punct(<Token![,]>::default());
-                derives_existing.nested.extend(derives_to_append);
+                derives_existing.extend(derives_to_append);
 
                 // Replace the existing `Attribute`.
                 //
                 // `attr.parse_meta()` returns a `Meta`, which is not referenced by the
                 // `DeriveInput`, so we have to replace `attr` itself.
-                *attr = parse_quote!(#[#derives_existing]);
+                *attr = parse_quote!(#[derive(#derives_existing)]);
             }
         } else {
             // Add a new `#[derive(..)]` attribute with all the derives.
@@ -107,11 +109,11 @@ impl DeriveInputExt for DeriveInput {
         util::contains_tag(&self.attrs, namespace, tag)
     }
 
-    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<NestedMeta> {
+    fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta> {
         util::tag_parameter(&self.attrs, namespace, tag)
     }
 
-    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<NestedMeta> {
+    fn tag_parameters(&self, namespace: &Path, tag: &Path) -> Vec<Meta> {
         util::tag_parameters(&self.attrs, namespace, tag)
     }
 }
@@ -120,7 +122,7 @@ impl DeriveInputExt for DeriveInput {
 mod tests {
     use proc_macro2::Span;
     use quote::quote;
-    use syn::{parse_quote, DeriveInput, Error, Lit, Meta, NestedMeta};
+    use syn::{parse_quote, DeriveInput, Error, Meta, MetaNameValue};
 
     use super::DeriveInputExt;
 
@@ -247,16 +249,15 @@ mod tests {
             struct Struct;
         );
 
+        let tag_expected: Meta = parse_quote!(Magic);
         assert_eq!(
-            ast.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Some(NestedMeta::Meta(Meta::Path(parse_quote!(Magic))))
+            Some(tag_expected),
+            ast.tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name))
         );
     }
 
     #[test]
-    #[should_panic(
-        expected = "Expected exactly one identifier for `#[my::derive(tag::name(..))]`."
-    )]
+    #[should_panic(expected = "Expected exactly one parameter for `#[my::derive(tag::name(..))]`.")]
     fn tag_parameter_panics_when_multiple_parameters_present() {
         let ast: DeriveInput = parse_quote!(
             #[my::derive(tag::name(Magic::One, Magic::Two))]
@@ -274,23 +275,27 @@ mod tests {
         );
 
         assert_eq!(
-            ast.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-            Vec::<NestedMeta>::new()
+            Vec::<Meta>::new(),
+            ast.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name))
         );
     }
 
     #[test]
     fn tag_parameters_returns_idents_when_present() {
         let ast: DeriveInput = parse_quote!(
-            #[my::derive(tag::name(Magic::One, "{ Magic::Two }"))]
+            #[my::derive(tag::name(Magic::One, second = "{ Magic::Two }"))]
             struct Struct;
         );
 
         assert_eq!(
             ast.tag_parameters(&parse_quote!(my::derive), &parse_quote!(tag::name)),
             vec![
-                NestedMeta::Meta(Meta::Path(parse_quote!(Magic::One))),
-                NestedMeta::Lit(Lit::Str(parse_quote!("{ Magic::Two }"))),
+                Meta::Path(parse_quote!(Magic::One)),
+                Meta::NameValue(MetaNameValue {
+                    path: parse_quote!(second),
+                    eq_token: Default::default(),
+                    value: parse_quote!("{ Magic::Two }")
+                }),
             ]
         );
     }
