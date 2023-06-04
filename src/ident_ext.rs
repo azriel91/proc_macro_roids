@@ -1,5 +1,4 @@
-use std::fmt::Display;
-
+use quote::format_ident;
 use syn::Ident;
 
 /// Convenience methods on `Ident`s.
@@ -11,7 +10,7 @@ pub trait IdentExt {
     /// * `suffix`: Suffix to append.
     fn append<S>(&self, suffix: S) -> Ident
     where
-        S: Display;
+        S: quote::IdentFragment;
 
     /// Returns a new `Ident` by prepending this Ident with the specified
     /// prefix.
@@ -21,24 +20,22 @@ pub trait IdentExt {
     /// * `prefix`: Prefix to prepend.
     fn prepend<S>(&self, prefix: S) -> Ident
     where
-        S: Display;
+        S: quote::IdentFragment;
 }
 
 impl IdentExt for Ident {
     fn append<S>(&self, suffix: S) -> Ident
     where
-        S: Display,
+        S: quote::IdentFragment,
     {
-        let appended = format!("{}{}", self, suffix);
-        Ident::new(&appended, self.span())
+        format_ident!("{}{}", self, suffix)
     }
 
     fn prepend<S>(&self, suffix: S) -> Ident
     where
-        S: Display,
+        S: quote::IdentFragment,
     {
-        let prepended = format!("{}{}", suffix, self);
-        Ident::new(&prepended, self.span())
+        format_ident!("{}{}", suffix, self)
     }
 }
 

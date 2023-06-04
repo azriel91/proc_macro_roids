@@ -1,15 +1,5 @@
-use proc_macro2::Span;
 use quote::quote;
-use syn::{punctuated::Punctuated, Attribute, Ident, Meta, Path, Token};
-
-/// Returns an `Ident` by concatenating `String` representations.
-pub fn ident_concat(left: &str, right: &str) -> Ident {
-    let mut combined = String::with_capacity(left.len() + right.len());
-    combined.push_str(left);
-    combined.push_str(right);
-
-    Ident::new(&combined, Span::call_site())
-}
+use syn::{punctuated::Punctuated, Attribute, Meta, Path, Token};
 
 /// Returns whether an item's attributes contains a given `#[namespace(tag)]`
 /// attribute.

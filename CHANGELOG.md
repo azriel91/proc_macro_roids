@@ -13,6 +13,7 @@ syn 2 upgrade. All of the changes are **Breaking**, and so have not been highlig
 * Replaced `util::namespace_meta_lists_iter` with `util::namespace_nested_metas_iter`.
 * Replaced `util::tag_meta_lists_iter` with `util::tag_nested_metas_iter`.
 * Removed `util::tag_meta_lists_owned_iter`, there is no more borrowed version, so just use `util::tag_nested_metas_iter`.
+* Removed `util::ident_concat` -- users can use `quote::format_ident!` instead.
 
 
 ## 0.7.0 (2020-01-13)
