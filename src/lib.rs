@@ -9,7 +9,7 @@
 //!
 //! Makes writing procedural macros much easier:
 //!
-//! ```rust,ignore
+//! ```rust,edition2021
 //! extern crate proc_macro;
 //!
 //! use proc_macro::TokenStream;
@@ -20,7 +20,7 @@
 //!
 //! /// Derives a `Super` enum with a variant for each struct field:
 //! ///
-//! /// ```rust,edition2018
+//! /// ```rust,edition2021
 //! /// use std::marker::PhantomData;
 //! /// use super_derive::Super;
 //! ///
@@ -35,12 +35,12 @@
 //! ///
 //! /// Generates:
 //! ///
-//! /// ```rust,ignore
+//! /// ```rust,edition2021
 //! /// pub enum SuperMan {
 //! ///     U64(u64),
 //! /// }
 //! /// ```
-//! #[proc_macro_derive(Super, attributes(super_derive))]
+//! // #[proc_macro_derive(Super, attributes(super_derive))]
 //! pub fn system_desc_derive(input: TokenStream) -> TokenStream {
 //!     let ast = parse_macro_input!(input as DeriveInput);
 //!     let enum_name = ast.ident.prepend("Super");
@@ -79,7 +79,7 @@
 //!
 //! This works for function-like or attribute proc macros.
 //!
-//! ```rust,ignore
+//! ```rust,edition2021
 //! extern crate proc_macro;
 //!
 //! use proc_macro::TokenStream;
@@ -87,7 +87,7 @@
 //! use quote::quote;
 //! use syn::{parse_macro_input, parse_quote, DeriveInput};
 //!
-//! #[proc_macro_attribute]
+//! // #[proc_macro_attribute]
 //! pub fn copy(_args: TokenStream, item: TokenStream) -> TokenStream {
 //!     // Example input:
 //!     //
@@ -115,7 +115,7 @@
 //!
 //! This works for structs with named fields or unit structs.
 //!
-//! ```rust,ignore
+//! ```rust,edition2021
 //! extern crate proc_macro;
 //!
 //! use proc_macro::TokenStream;
@@ -131,7 +131,7 @@
 //! /// #[append_cd]
 //! /// struct StructNamed { a: u32, b: i32 }
 //! /// ```
-//! #[proc_macro_attribute]
+//! // #[proc_macro_attribute]
 //! pub fn append_cd(_args: TokenStream, item: TokenStream) -> TokenStream {
 //!     // Example input:
 //!     //
@@ -157,7 +157,7 @@
 //!
 //! This works for structs with unnamed fields or unit structs.
 //!
-//! ```rust,ignore
+//! ```rust,edition2021
 //! extern crate proc_macro;
 //!
 //! use proc_macro::TokenStream;
@@ -173,7 +173,7 @@
 //! /// #[append_i64_usize]
 //! /// struct StructUnit;
 //! /// ```
-//! #[proc_macro_attribute]
+//! // #[proc_macro_attribute]
 //! pub fn append_i64_usize(_args: TokenStream, item: TokenStream) -> TokenStream {
 //!     // Example input:
 //!     //
@@ -199,7 +199,7 @@
 //!
 //! This works for structs with unnamed fields or unit structs.
 //!
-//! ```rust,ignore
+//! ```rust,edition2021
 //! extern crate proc_macro;
 //!
 //! use proc_macro::TokenStream;
@@ -207,7 +207,7 @@
 //! use quote::quote;
 //! use syn::{parse_macro_input, parse_quote, DeriveInput, Type};
 //!
-//! #[proc_macro_derive(Deref)]
+//! // #[proc_macro_derive(Deref)]
 //! pub fn derive_deref(item: TokenStream) -> TokenStream {
 //!     // Example input:
 //!     //
@@ -215,8 +215,8 @@
 //!     // struct Newtype(u32);
 //!     let mut ast = parse_macro_input!(item as DeriveInput);
 //!
-//!     // Get the inner field.
-//!     let inner_field = ast.inner_type();
+//!     // Get the inner field type.
+//!     let inner_type = ast.inner_type();
 //!
 //!     // Implement `Deref`
 //!     let type_name = &ast.ident;
@@ -229,7 +229,7 @@
 //!                 &self.0
 //!             }
 //!         }
-//!     }
+//!     };
 //!     TokenStream::from(token_stream_2)
 //! }
 //! ```
@@ -241,15 +241,21 @@
 //!
 //! <summary>5. `Ident` concatenation.</summary>
 //!
-//! ```rust,edition2018
-//! use proc_macro_roids::IdentExt;
+//! ```rust,edition2021
 //! use proc_macro2::Span;
+//! use proc_macro_roids::IdentExt;
 //! use syn::Ident;
 //!
 //! # fn main() {
 //! let one = Ident::new("One", Span::call_site());
-//! assert_eq!(Ident::new("OneSuffix", Span::call_site()), one.append("Suffix"));
-//! assert_eq!(Ident::new("PrefixOne", Span::call_site()), one.prepend("Prefix"));
+//! assert_eq!(
+//!     Ident::new("OneSuffix", Span::call_site()),
+//!     one.append("Suffix")
+//! );
+//! assert_eq!(
+//!     Ident::new("PrefixOne", Span::call_site()),
+//!     one.prepend("Prefix")
+//! );
 //!
 //! let two = Ident::new("Two", Span::call_site());
 //! assert_eq!(Ident::new("OneTwo", Span::call_site()), one.append(&two));
@@ -263,7 +269,7 @@
 //!
 //! <summary>6. Accessing struct fields.</summary>
 //!
-//! ```rust,edition2018
+//! ```rust,edition2021
 //! use proc_macro_roids::DeriveInputStructExt;
 //! use syn::{parse_quote, DeriveInput, Fields};
 //!
@@ -284,10 +290,10 @@
 //!
 //! <summary>7. Inspecting `Field`s.</summary>
 //!
-//! ```rust,edition2018
-//! use proc_macro_roids::FieldExt;
+//! ```rust,edition2021
 //! use proc_macro2::Span;
-//! use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue, NestedMeta};
+//! use proc_macro_roids::FieldExt;
+//! use syn::{parse_quote, Expr, ExprLit, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue};
 //!
 //! let fields_named: FieldsNamed = parse_quote! {{
 //!     #[my::derive(tag::name(param = "value"))]
@@ -300,15 +306,17 @@
 //! assert!(field.is_phantom_data());
 //! assert!(field.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)));
 //! assert_eq!(
-//!     field.tag_parameter(
-//!         &parse_quote!(my::derive),
-//!         &parse_quote!(tag::name),
-//!     ).expect("Expected parameter to exist."),
-//!     NestedMeta::Meta(Meta::NameValue(MetaNameValue {
+//!     field
+//!         .tag_parameter(&parse_quote!(my::derive), &parse_quote!(tag::name),)
+//!         .expect("Expected parameter to exist."),
+//!     Meta::NameValue(MetaNameValue {
 //!         path: parse_quote!(param),
 //!         eq_token: Default::default(),
-//!         lit: Lit::Str(LitStr::new("value", Span::call_site())),
-//!     })),
+//!         value: Expr::Lit(ExprLit {
+//!             attrs: Vec::new(),
+//!             lit: Lit::Str(LitStr::new("value", Span::call_site())),
+//!         }),
+//!     }),
 //! );
 //! ```
 //!
@@ -318,7 +326,7 @@
 //!
 //! <summary>8. (De)constructing `Fields`.</summary>
 //!
-//! ```rust,edition2018
+//! ```rust,edition2021
 //! # use std::str::FromStr;
 //! #
 //! use proc_macro_roids::{DeriveInputStructExt, FieldsExt};
@@ -352,8 +360,8 @@
 //!
 //! ---
 //!
-//! **Note:** The *roids* name is chosen because, although these functions make it easy to perform
-//! certain operations, they may not always be good ideas =D!
+//! **Note:** The *roids* name is chosen because, although these functions make
+//! it easy to perform certain operations, they may not always be good ideas =D!
 
 #[cfg(test)]
 extern crate proc_macro;
@@ -368,9 +376,9 @@ pub use crate::{
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
     util::{
-        contains_tag, format_path, ident_concat, meta_list_contains, namespace_meta_lists,
-        namespace_meta_lists_iter, namespace_parameter, namespace_parameters, nested_meta_to_path,
-        tag_meta_lists_iter, tag_meta_lists_owned_iter, tag_parameter, tag_parameters,
+        contains_namespace, contains_tag, format_path, namespace_nested_metas_iter,
+        namespace_parameter, namespace_parameters, tag_nested_metas_iter, tag_parameter,
+        tag_parameters,
     },
 };
 

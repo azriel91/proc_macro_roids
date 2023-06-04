@@ -121,39 +121,33 @@ impl DeriveInputStructExt for DeriveInput {
     }
 
     fn is_unit(&self) -> bool {
-        if let Data::Struct(DataStruct {
-            fields: Fields::Unit,
-            ..
-        }) = &self.data
-        {
-            true
-        } else {
-            false
-        }
+        matches!(
+            &self.data,
+            Data::Struct(DataStruct {
+                fields: Fields::Unit,
+                ..
+            })
+        )
     }
 
     fn is_named(&self) -> bool {
-        if let Data::Struct(DataStruct {
-            fields: Fields::Named(..),
-            ..
-        }) = &self.data
-        {
-            true
-        } else {
-            false
-        }
+        matches!(
+            &self.data,
+            Data::Struct(DataStruct {
+                fields: Fields::Named(..),
+                ..
+            })
+        )
     }
 
     fn is_tuple(&self) -> bool {
-        if let Data::Struct(DataStruct {
-            fields: Fields::Unnamed(..),
-            ..
-        }) = &self.data
-        {
-            true
-        } else {
-            false
-        }
+        matches!(
+            &self.data,
+            Data::Struct(DataStruct {
+                fields: Fields::Unnamed(..),
+                ..
+            })
+        )
     }
 
     fn assert_fields_unit(&self) {
