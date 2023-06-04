@@ -25,6 +25,31 @@ pub trait DeriveInputExt {
     /// [*derive*]: <https://doc.rust-lang.org/reference/procedural-macros.html#derive-mode-macros>
     fn append_derives(&mut self, derives: Punctuated<Path, Token![,]>);
 
+    /// Returns whether the type contains a given `#[namespace]` attribute.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `path()` of the first-level attribute.
+    fn contains_namespace(&self, namespace: &Path) -> bool;
+
+    /// Returns the parameter from `#[namespace(parameter)]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `path()` of the first-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is more than one parameter for the tag.
+    fn namespace_parameter(&self, namespace: &Path) -> Option<Meta>;
+
+    /// Returns the parameters from `#[namespace(param1, param2, ..)]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `path()` of the first-level attribute.
+    fn namespace_parameters(&self, namespace: &Path) -> Vec<Meta>;
+
     /// Returns whether the type contains a given `#[namespace(tag)]` attribute.
     ///
     /// # Parameters
@@ -109,6 +134,18 @@ impl DeriveInputExt for DeriveInput {
         }
     }
 
+    fn contains_namespace(&self, namespace: &Path) -> bool {
+        util::contains_namespace(&self.attrs, namespace)
+    }
+
+    fn namespace_parameter(&self, namespace: &Path) -> Option<Meta> {
+        util::namespace_parameter(&self.attrs, namespace)
+    }
+
+    fn namespace_parameters(&self, namespace: &Path) -> Vec<Meta> {
+        util::namespace_parameters(&self.attrs, namespace)
+    }
+
     fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool {
         util::contains_tag(&self.attrs, namespace, tag)
     }
@@ -179,6 +216,112 @@ mod tests {
     }
 
     #[test]
+    fn contains_namespace_returns_false_when_namespace_does_not_exist() -> Result<(), Error> {
+        let tokens_list = vec![
+            quote! {
+                #[other::my::derive]
+                struct Struct;
+            },
+            quote! {
+                #[my::derive::other(other)]
+                struct Struct;
+            },
+            quote! {
+                #[other(tag::name)]
+                struct Struct;
+            },
+        ];
+
+        tokens_list
+            .into_iter()
+            .try_for_each(|tokens| -> Result<(), Error> {
+                let message = format!("Failed to parse tokens: `{}`", &tokens);
+                let assertion_message = format!(
+                    "Expected `contains_namespace` to return false for tokens: `{}`",
+                    &tokens
+                );
+
+                let ast: DeriveInput =
+                    syn::parse2(tokens).map_err(|_| Error::new(Span::call_site(), &message))?;
+
+                assert!(
+                    !ast.contains_namespace(&parse_quote!(my::derive)),
+                    "{}",
+                    assertion_message
+                );
+
+                Ok(())
+            })
+    }
+
+    #[test]
+    fn namespace_parameter_returns_none_when_not_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my::derive]
+            struct Struct;
+        );
+
+        assert_eq!(ast.namespace_parameter(&parse_quote!(my::derive)), None);
+    }
+
+    #[test]
+    fn namespace_parameter_returns_ident_when_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my::derive(Magic)]
+            struct Struct;
+        );
+
+        let tag_expected: Meta = parse_quote!(Magic);
+        assert_eq!(
+            Some(tag_expected),
+            ast.namespace_parameter(&parse_quote!(my::derive))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected exactly one parameter for `#[my::derive(..)]`.")]
+    fn namespace_parameter_panics_when_multiple_parameters_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my::derive(Magic::One, Magic::Two)]
+            struct Struct;
+        );
+
+        ast.namespace_parameter(&parse_quote!(my::derive));
+    }
+
+    #[test]
+    fn namespace_parameters_returns_empty_vec_when_not_present() {
+        let ast: DeriveInput = parse_quote!(
+            struct Struct;
+        );
+
+        assert_eq!(
+            Vec::<Meta>::new(),
+            ast.namespace_parameters(&parse_quote!(my::derive))
+        );
+    }
+
+    #[test]
+    fn namespace_parameters_returns_idents_when_present() {
+        let ast: DeriveInput = parse_quote!(
+            #[my::derive(Magic::One, second = "{ Magic::Two }")]
+            struct Struct;
+        );
+
+        assert_eq!(
+            ast.namespace_parameters(&parse_quote!(my::derive)),
+            vec![
+                Meta::Path(parse_quote!(Magic::One)),
+                Meta::NameValue(MetaNameValue {
+                    path: parse_quote!(second),
+                    eq_token: Default::default(),
+                    value: parse_quote!("{ Magic::Two }")
+                }),
+            ]
+        );
+    }
+
+    #[test]
     fn contains_tag_returns_true_when_tag_exists() -> Result<(), Error> {
         let ast: DeriveInput = parse_quote!(
             #[my::derive(tag::name)]
@@ -219,12 +362,10 @@ mod tests {
                 let ast: DeriveInput =
                     syn::parse2(tokens).map_err(|_| Error::new(Span::call_site(), &message))?;
 
-                // kcov-ignore-start
                 assert!(
-                    // kcov-ignore-end
                     !ast.contains_tag(&parse_quote!(my::derive), &parse_quote!(tag::name)),
-                    "{}",              // kcov-ignore
-                    assertion_message  // kcov-ignore
+                    "{}",
+                    assertion_message
                 );
 
                 Ok(())

@@ -26,6 +26,24 @@ pub trait FieldExt {
     /// * `tag`: The `path()` of the second-level attribute.
     fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool;
 
+    /// Returns the parameter from `#[namespace(parameter)]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `path()` of the first-level attribute.
+    ///
+    /// # Panics
+    ///
+    /// Panics if there is more than one parameter for the tag.
+    fn namespace_parameter(&self, namespace: &Path) -> Option<Meta>;
+
+    /// Returns the parameters from `#[namespace(param1, param2, ..)]`.
+    ///
+    /// # Parameters
+    ///
+    /// * `namespace`: The `path()` of the first-level attribute.
+    fn namespace_parameters(&self, namespace: &Path) -> Vec<Meta>;
+
     /// Returns the parameter from `#[namespace(tag(parameter))]`.
     ///
     /// # Parameters
@@ -71,6 +89,14 @@ impl FieldExt for Field {
 
     fn contains_tag(&self, namespace: &Path, tag: &Path) -> bool {
         util::contains_tag(&self.attrs, namespace, tag)
+    }
+
+    fn namespace_parameter(&self, namespace: &Path) -> Option<Meta> {
+        util::namespace_parameter(&self.attrs, namespace)
+    }
+
+    fn namespace_parameters(&self, namespace: &Path) -> Vec<Meta> {
+        util::namespace_parameters(&self.attrs, namespace)
     }
 
     fn tag_parameter(&self, namespace: &Path, tag: &Path) -> Option<Meta> {
@@ -122,6 +148,84 @@ mod tests {
     }
 
     #[test]
+    fn namespace_parameter_returns_none_when_not_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[other::derive]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        let parameter = field.namespace_parameter(&parse_quote!(my::derive));
+        assert_eq!(parameter, None);
+    }
+
+    #[test]
+    fn namespace_parameter_returns_meta_when_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my::derive(Magic)]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.namespace_parameter(&parse_quote!(my::derive)),
+            Some(Meta::Path(parse_quote!(Magic)))
+        );
+    }
+
+    #[test]
+    #[should_panic(expected = "Expected exactly one parameter for `#[my::derive(..)]`.")]
+    fn namespace_parameter_panics_when_multiple_parameters_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my::derive(Magic::One, Magic::Two)]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        field.namespace_parameter(&parse_quote!(my::derive));
+    }
+
+    #[test]
+    fn namespace_parameters_returns_empty_vec_when_not_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my::derive]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.namespace_parameters(&parse_quote!(my::derive)),
+            Vec::<Meta>::new()
+        );
+    }
+
+    #[test]
+    fn namespace_parameters_returns_metas_when_present() {
+        let fields_named: FieldsNamed = parse_quote! {{
+            #[my::derive(Magic::One, second = "{ Magic::Two }")]
+            pub name: u32,
+        }};
+        let fields = Fields::from(fields_named);
+        let field = fields.iter().next().expect("Expected field to exist.");
+
+        assert_eq!(
+            field.namespace_parameters(&parse_quote!(my::derive)),
+            vec![
+                Meta::Path(parse_quote!(Magic::One)),
+                Meta::NameValue(MetaNameValue {
+                    path: parse_quote!(second),
+                    eq_token: Default::default(),
+                    value: parse_quote!("{ Magic::Two }")
+                }),
+            ]
+        );
+    }
+
+    #[test]
     fn tag_parameter_returns_none_when_not_present() {
         let fields_named: FieldsNamed = parse_quote! {{
             #[my::derive]
@@ -135,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn tag_parameter_returns_path_when_present() {
+    fn tag_parameter_returns_meta_when_present() {
         let fields_named: FieldsNamed = parse_quote! {{
             #[my::derive(tag::name(Magic))]
             pub name: u32,
@@ -178,7 +282,7 @@ mod tests {
     }
 
     #[test]
-    fn tag_parameters_returns_paths_when_present() {
+    fn tag_parameters_returns_metas_when_present() {
         let fields_named: FieldsNamed = parse_quote! {{
             #[my::derive(tag::name(Magic::One, second = "{ Magic::Two }"))]
             pub name: u32,

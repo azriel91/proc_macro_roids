@@ -1,6 +1,17 @@
 use quote::quote;
 use syn::{punctuated::Punctuated, Attribute, Meta, Path, Token};
 
+/// Returns whether an item's attributes contains a given `#[namespace]`
+/// attribute.
+///
+/// # Parameters
+///
+/// * `attrs`: The attributes on the item.
+/// * `namespace`: The `path()` of the first-level attribute.
+pub fn contains_namespace(attrs: &[Attribute], namespace: &Path) -> bool {
+    attrs.iter().any(|attr| attr.path() == namespace)
+}
+
 /// Returns whether an item's attributes contains a given `#[namespace(tag)]`
 /// attribute.
 ///
@@ -14,15 +25,10 @@ pub fn contains_tag(attrs: &[Attribute], namespace: &Path, tag: &Path) -> bool {
         .iter()
         .filter(|attr| attr.path() == namespace)
         .any(|attr| {
-            let tags = attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated);
-            if let Ok(tags) = tags {
-                tags.iter().any(|tag_existing| tag_existing.path() == tag)
-            } else {
-                false
-            }
-            // kcov-ignore-start
+            attr.parse_args_with(Punctuated::<Meta, Token![,]>::parse_terminated)
+                .map(|tags| tags.iter().any(|tag_meta| tag_meta.path() == tag))
+                .unwrap_or(false)
         })
-    // kcov-ignore-end
 }
 
 /// Returns the parameter from `#[namespace(parameter)]`.

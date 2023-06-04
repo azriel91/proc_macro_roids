@@ -376,9 +376,9 @@ pub use crate::{
     fields_unnamed_append::FieldsUnnamedAppend,
     ident_ext::IdentExt,
     util::{
-        contains_tag, format_path, namespace_nested_metas, namespace_nested_metas_iter,
-        namespace_parameter, namespace_parameters, tag_nested_metas_iter, tag_parameter,
-        tag_parameters,
+        contains_namespace, contains_tag, format_path, namespace_nested_metas,
+        namespace_nested_metas_iter, namespace_parameter, namespace_parameters,
+        tag_nested_metas_iter, tag_parameter, tag_parameters,
     },
 };
 
