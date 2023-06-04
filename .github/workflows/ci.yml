@@ -1,0 +1,147 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - '**'
+
+name: CI
+
+jobs:
+  audit:
+    name: Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - uses: bp3d-actions/audit-check@9c23bd47e5e7b15b824739e0862cb878a52cc211
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  fmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - # FIXME: Switch back when actions-rs/toolchain#{209,220,222} is merged
+        uses: r3-os/actions-rust-toolchain@a862b6623c178b43a3135516442a5f72fb5c1877
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: rustfmt
+
+      - # FIXME: Switch back when actions-rs/cargo#217 gets merged
+        uses: r3-os/actions-rust-cargo@fb222fe18dc90e381546d012f9e3d6f353f0f627
+        with:
+          command: fmt
+          args: --all -- --check
+
+  docs_and_spell_check:
+    name: Docs and Spell Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RUSTDOCFLAGS: "-Dwarnings"
+    steps:
+      - name: Checkout Actions Repository
+        uses: actions/checkout@v3
+      - # FIXME: Switch back when actions-rs/toolchain#{209,220,222} is merged
+        uses: r3-os/actions-rust-toolchain@a862b6623c178b43a3135516442a5f72fb5c1877
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Check spelling
+        uses: crate-ci/typos@master
+
+      - # FIXME: Switch back when actions-rs/cargo#217 gets merged
+        uses: r3-os/actions-rust-cargo@fb222fe18dc90e381546d012f9e3d6f353f0f627
+        with:
+          command: doc
+          args: --no-deps
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - # FIXME: Switch back when actions-rs/toolchain#{209,220,222} is merged
+        uses: r3-os/actions-rust-toolchain@a862b6623c178b43a3135516442a5f72fb5c1877
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: clippy
+
+      - name: 'Run clippy'
+        # we cannot use `--all-features` because `envman` has features that are mutually exclusive.
+        run: |
+          cargo clippy --workspace --fix -- -D warnings
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - # FIXME: Switch back when actions-rs/toolchain#{209,220,222} is merged
+        uses: r3-os/actions-rust-toolchain@a862b6623c178b43a3135516442a5f72fb5c1877
+        with:
+          profile: minimal
+          toolchain: nightly
+          override: true
+          components: llvm-tools-preview
+
+      - uses: taiki-e/install-action@cargo-llvm-cov
+      - uses: taiki-e/install-action@nextest
+
+      - name: 'Collect coverage'
+        run: ./coverage.sh
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./target/coverage/lcov.info
+
+  build_and_test_linux:
+    name: Build and Test (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v3
+      - # FIXME: Switch back when actions-rs/toolchain#{209,220,222} is merged
+        uses: r3-os/actions-rust-toolchain@a862b6623c178b43a3135516442a5f72fb5c1877
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - uses: taiki-e/install-action@nextest
+      - name: 'Build and test'
+        run: |
+          cargo nextest run --workspace
+
+  build_and_test_windows:
+    name: Build and Test (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Prepare symlink configuration
+        run: git config --global core.symlinks true
+
+      - uses: actions/checkout@v3
+      - # FIXME: Switch back when actions-rs/toolchain#{209,220,222} is merged
+        uses: r3-os/actions-rust-toolchain@a862b6623c178b43a3135516442a5f72fb5c1877
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - uses: taiki-e/install-action@nextest
+      - name: 'Build and test'
+        run: cargo nextest run --workspace
