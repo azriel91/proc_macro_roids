@@ -1,6 +1,6 @@
 # Changelog
 
-## unreleased
+## 0.8.0 (2023-06-04)
 
 syn 2 upgrade. All of the changes are **Breaking**, and so have not been highlighted as such.
 

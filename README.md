@@ -8,7 +8,7 @@
 Traits and functions to make writing proc macros more ergonomic.
 
 ```toml
-proc_macro_roids = "0.7.0"
+proc_macro_roids = "0.8.0"
 ```
 
 Makes writing procedural macros much easier:
