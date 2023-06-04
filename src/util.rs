@@ -254,37 +254,6 @@ pub fn namespace_nested_metas_iter<'f>(
         .flat_map(|nested_metas| nested_metas.into_iter())
 }
 
-/// Returns the nested metas from within: `#[namespace(..)]`.
-///
-/// Each `meta` is a `namespace(..)` nested meta item.
-///
-/// # Parameters
-///
-/// * `attrs`: Attributes of the item to inspect.
-/// * `namespace`: The `path()` of the first-level attribute.
-///
-/// # Examples
-///
-/// ```rust,edition2021
-/// use proc_macro_roids::namespace_nested_metas;
-/// use syn::{parse_quote, DeriveInput, Meta, Path};
-///
-/// let ast: DeriveInput = parse_quote! {
-///     #[namespace(One)]
-///     #[namespace(two = "")]
-///     pub struct MyEnum;
-/// };
-///
-/// let ns: Path = parse_quote!(namespace);
-/// let nested_metas = namespace_nested_metas(&ast.attrs, &ns);
-///
-/// let meta_one: Meta = Meta::Path(parse_quote!(One));
-/// let meta_two: Meta = Meta::NameValue(parse_quote!(two = ""));
-/// assert_eq!(vec![meta_one, meta_two], nested_metas);
-pub fn namespace_nested_metas(attrs: &[Attribute], namespace: &Path) -> Vec<Meta> {
-    namespace_nested_metas_iter(attrs, namespace).collect::<Vec<Meta>>()
-}
-
 /// Returns an iterator over nested metas from `#[namespace(tag(..))]`.
 ///
 /// # Parameters

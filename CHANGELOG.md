@@ -9,11 +9,12 @@ syn 2 upgrade. All of the changes are **Breaking**, and so have not been highlig
 * `DeriveInputExt::tag_parameters` return type changed from `NestedMeta` to `Meta`.
 * `util::nested_meta_to_path` is removed.
 * `util::meta_list_contains` is removed.
-* Replaced `util::namespace_meta_lists` with `util::namespace_nested_metas`.
+* Removed `util::namespace_meta_lists` -- use `util::namespace_nested_metas_iter`.
 * Replaced `util::namespace_meta_lists_iter` with `util::namespace_nested_metas_iter`.
 * Replaced `util::tag_meta_lists_iter` with `util::tag_nested_metas_iter`.
-* Removed `util::tag_meta_lists_owned_iter`, there is no more borrowed version, so just use `util::tag_nested_metas_iter`.
+* Removed `util::tag_meta_lists_owned_iter`, there is no borrowed version because of `syn`'s new API, so use `util::tag_nested_metas_iter`.
 * Removed `util::ident_concat` -- users can use `quote::format_ident!` instead.
+* Added `util::namespace_parameter` and `util::namespace_parameters`.
 
 
 ## 0.7.0 (2020-01-13)
