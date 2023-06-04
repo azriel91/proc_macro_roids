@@ -2,8 +2,7 @@ use syn::{DeriveInput, Fields, FieldsUnnamed};
 
 use crate::DeriveInputStructExt;
 
-const ERR_MUST_BE_UNIT_OR_UNNAMED: &str =
-    "Macro must be used on either a unit struct or tuple struct.\n\
+const ERR_MUST_BE_UNIT_OR_UNNAMED: &str = "Macro must be used on either a unit struct or tuple struct.\n\
      This derive does not work on structs with named fields.";
 
 /// Indicates this type may have `FieldsUnnamed` appended to it.

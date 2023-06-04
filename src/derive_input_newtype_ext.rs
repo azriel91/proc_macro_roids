@@ -23,7 +23,8 @@ pub trait DeriveInputNewtypeExt {
     /// Panics if the AST is not for a newtype struct.
     fn inner_type_mut(&mut self) -> &mut Field;
 
-    /// Returns true if the AST is for a struct with **exactly one** unnamed field.
+    /// Returns true if the AST is for a struct with **exactly one** unnamed
+    /// field.
     fn is_newtype(&self) -> bool;
 }
 

@@ -13,7 +13,8 @@ pub trait IdentExt {
     where
         S: Display;
 
-    /// Returns a new `Ident` by prepending this Ident with the specified prefix.
+    /// Returns a new `Ident` by prepending this Ident with the specified
+    /// prefix.
     ///
     /// # Parameters
     ///

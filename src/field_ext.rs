@@ -11,8 +11,8 @@ pub trait FieldExt {
 
     /// Returns whether the field is `PhantomData`.
     ///
-    /// Note that the detection is a string comparison instead of a type ID comparison, so is prone
-    /// to inaccurate detection, for example:
+    /// Note that the detection is a string comparison instead of a type ID
+    /// comparison, so is prone to inaccurate detection, for example:
     ///
     /// * `use std::marker::PhantomData as GhostData;`
     /// * `use other_crate::OtherType as PhantomData;`

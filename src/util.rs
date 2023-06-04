@@ -11,7 +11,8 @@ pub fn ident_concat(left: &str, right: &str) -> Ident {
     Ident::new(&combined, Span::call_site())
 }
 
-/// Returns whether an item's attributes contains a given `#[namespace(tag)]` attribute.
+/// Returns whether an item's attributes contains a given `#[namespace(tag)]`
+/// attribute.
 ///
 /// # Parameters
 ///

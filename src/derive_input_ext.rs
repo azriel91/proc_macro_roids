@@ -6,17 +6,20 @@ use crate::util;
 pub trait DeriveInputExt {
     /// Appends derives to the list of derives.
     ///
-    /// **Note:** This can only be used with [*attribute*] macros, and not [*derive*] macros.
+    /// **Note:** This can only be used with [*attribute*] macros, and not
+    /// [*derive*] macros.
     ///
     /// * If the `derive` attribute does not exist, one will be created.
-    /// * If the `derive` attribute exists, and there are existing `derive`s that overlap with the
-    ///   derives to append, this macro will panic with the overlapping derives.
-    /// * If the `derive` attribute exists, and there are no overlapping `derive`s, then they will
-    ///   be combined.
+    /// * If the `derive` attribute exists, and there are existing `derive`s
+    ///   that overlap with the derives to append, this macro will panic with
+    ///   the overlapping derives.
+    /// * If the `derive` attribute exists, and there are no overlapping
+    ///   `derive`s, then they will be combined.
     ///
     /// # Panics
     ///
-    /// Panics if there are existing `derive`s that overlap with the derives to append.
+    /// Panics if there are existing `derive`s that overlap with the derives to
+    /// append.
     ///
     /// [*attribute*]: <https://doc.rust-lang.org/reference/procedural-macros.html#attribute-macros>
     /// [*derive*]: <https://doc.rust-lang.org/reference/procedural-macros.html#derive-mode-macros>
@@ -66,7 +69,8 @@ impl DeriveInputExt for DeriveInput {
             .next();
 
         if let Some((attr, mut derives_existing)) = attr_derives_existing {
-            // Emit warning if the user derives any of the existing derives, as we do that for them.
+            // Emit warning if the user derives any of the existing derives, as we do that
+            // for them.
             let superfluous = derives_to_append
                 .iter()
                 .filter(|derive_to_append| {
@@ -81,8 +85,8 @@ impl DeriveInputExt for DeriveInput {
                 // derives_existing
                 //     .span()
                 //     .warning(
-                //         "The following are automatically derived by this proc macro attribute.",
-                //     )
+                //         "The following are automatically derived by this proc macro
+                // attribute.",     )
                 //     .emit();
                 panic!(
                     "The following are automatically derived when this attribute is used:\n\

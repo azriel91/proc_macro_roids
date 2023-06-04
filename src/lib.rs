@@ -360,8 +360,8 @@
 //!
 //! ---
 //!
-//! **Note:** The *roids* name is chosen because, although these functions make it easy to perform
-//! certain operations, they may not always be good ideas =D!
+//! **Note:** The *roids* name is chosen because, although these functions make
+//! it easy to perform certain operations, they may not always be good ideas =D!
 
 #[cfg(test)]
 extern crate proc_macro;

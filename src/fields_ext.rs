@@ -26,11 +26,7 @@ pub trait FieldsExt {
 
 impl FieldsExt for Fields {
     fn is_unit(&self) -> bool {
-        if let Fields::Unit = self {
-            true
-        } else {
-            false
-        }
+        if let Fields::Unit = self { true } else { false }
     }
 
     fn is_named(&self) -> bool {
