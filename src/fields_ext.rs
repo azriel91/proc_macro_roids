@@ -26,37 +26,27 @@ pub trait FieldsExt {
 
 impl FieldsExt for Fields {
     fn is_unit(&self) -> bool {
-        if let Fields::Unit = self { true } else { false }
+        matches!(self, Fields::Unit)
     }
 
     fn is_named(&self) -> bool {
-        if let Fields::Named(..) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, Fields::Named(..))
     }
 
     fn is_tuple(&self) -> bool {
-        if let Fields::Unnamed(..) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, Fields::Unnamed(..))
     }
 
     fn construction_form(&self) -> TokenStream {
         match self {
             Fields::Unit => TokenStream::new(),
             Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => {
-                let token_stream = (0..unnamed.len()).into_iter().fold(
-                    TokenStream::new(),
-                    |mut token_stream, n| {
+                let token_stream =
+                    (0..unnamed.len()).fold(TokenStream::new(), |mut token_stream, n| {
                         let tuple_field = Ident::new(format!("_{}", n).as_str(), Span::call_site());
                         token_stream.extend(quote!(#tuple_field, ));
                         token_stream
-                    },
-                );
+                    });
 
                 quote! { (#token_stream) }
             }

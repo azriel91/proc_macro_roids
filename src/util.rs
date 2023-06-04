@@ -119,9 +119,8 @@ pub fn namespace_parameter(attrs: &[Attribute], namespace: &Path) -> Option<Meta
 /// ```
 pub fn namespace_parameters(attrs: &[Attribute], namespace: &Path) -> Vec<Meta> {
     let namespace_nested_metas_iter = namespace_nested_metas_iter(attrs, namespace);
-    let parameters = namespace_nested_metas_iter.collect::<Vec<Meta>>();
 
-    parameters
+    namespace_nested_metas_iter.collect::<Vec<Meta>>()
 }
 
 /// Returns the parameter from `#[namespace(tag(parameter))]`.

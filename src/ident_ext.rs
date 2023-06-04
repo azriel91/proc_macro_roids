@@ -69,7 +69,7 @@ mod tests {
         let one = Ident::new("One", Span::call_site());
         let two = Ident::new("Two", Span::call_site());
 
-        assert_eq!(Ident::new("OneTwo", Span::call_site()), one.append(&two));
+        assert_eq!(Ident::new("OneTwo", Span::call_site()), one.append(two));
     }
 
     #[test]
@@ -92,6 +92,6 @@ mod tests {
         let one = Ident::new("One", Span::call_site());
         let two = Ident::new("Two", Span::call_site());
 
-        assert_eq!(Ident::new("TwoOne", Span::call_site()), one.prepend(&two));
+        assert_eq!(Ident::new("TwoOne", Span::call_site()), one.prepend(two));
     }
 }
