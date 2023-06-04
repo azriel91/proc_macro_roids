@@ -2,7 +2,7 @@
 name = "proc_macro_roids"
 version = "0.7.0"
 authors = ["Azriel Hoh <azriel91@gmail.com>"]
-edition = "2018"
+edition = "2021"
 description = "Traits and functions to make writing proc macros more ergonomic."
 repository = "https://github.com/azriel91/proc_macro_roids"
 documentation = "https://docs.rs/proc_macro_roids/"
