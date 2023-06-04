@@ -1,9 +1,9 @@
-[![Crates.io](https://img.shields.io/crates/v/proc_macro_roids.svg)](https://crates.io/crates/proc_macro_roids)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/azriel91/proc_macro_roids?branch=master&svg=true)](https://ci.appveyor.com/project/azriel91/proc_macro_roids/branch/master)
-[![Build Status](https://travis-ci.org/azriel91/proc_macro_roids.svg?branch=master)](https://travis-ci.org/azriel91/proc_macro_roids)
-[![Coverage Status](https://codecov.io/gh/azriel91/proc_macro_roids/branch/master/graph/badge.svg)](https://codecov.io/gh/azriel91/proc_macro_roids)
+# 💊 Proc Macro Roids
 
-# Proc Macro Roids
+[![Crates.io](https://img.shields.io/crates/v/proc_macro_roids.svg)](https://crates.io/crates/proc_macro_roids)
+[![docs.rs](https://img.shields.io/docsrs/proc_macro_roids)](https://docs.rs/proc_macro_roids)
+[![CI](https://github.com/azriel91/proc_macro_roids/workflows/CI/badge.svg)](https://github.com/azriel91/proc_macro_roids/actions/workflows/ci.yml)
+[![Coverage Status](https://codecov.io/gh/azriel91/proc_macro_roids/branch/main/graph/badge.svg)](https://codecov.io/gh/azriel91/proc_macro_roids)
 
 Traits and functions to make writing proc macros more ergonomic.
 
@@ -24,7 +24,7 @@ use syn::{parse_macro_input, parse_quote, DeriveInput, Ident};
 
 /// Derives a `Super` enum with a variant for each struct field:
 ///
-/// ```rust,edition2018
+/// ```rust,edition2021
 /// use std::marker::PhantomData;
 /// use super_derive::Super;
 ///
@@ -219,8 +219,8 @@ pub fn derive_deref(item: TokenStream) -> TokenStream {
     // struct Newtype(u32);
     let mut ast = parse_macro_input!(item as DeriveInput);
 
-    // Get the inner field.
-    let inner_field = ast.inner_type();
+    // Get the inner field type.
+    let inner_type = ast.inner_type();
 
     // Implement `Deref`
     let type_name = &ast.ident;
@@ -245,7 +245,7 @@ pub fn derive_deref(item: TokenStream) -> TokenStream {
 
 <summary>5. `Ident` concatenation.</summary>
 
-```rust,edition2018
+```rust,edition2021
 use proc_macro_roids::IdentExt;
 use proc_macro2::Span;
 use syn::Ident;
@@ -267,7 +267,7 @@ assert_eq!(Ident::new("TwoOne", Span::call_site()), one.prepend(&two));
 
 <summary>6. Accessing struct fields.</summary>
 
-```rust,edition2018
+```rust,edition2021
 use proc_macro_roids::DeriveInputStructExt;
 use syn::{parse_quote, DeriveInput, Fields};
 
@@ -288,7 +288,7 @@ if let Fields::Named(..) = ast.fields() {
 
 <summary>7. Inspecting `Field`s.</summary>
 
-```rust,edition2018
+```rust,edition2021
 use proc_macro_roids::FieldExt;
 use proc_macro2::Span;
 use syn::{parse_quote, Fields, FieldsNamed, Lit, LitStr, Meta, MetaNameValue, NestedMeta};
@@ -322,7 +322,7 @@ assert_eq!(
 
 <summary>8. (De)constructing `Fields`.</summary>
 
-```rust,edition2018
+```rust,edition2021
 # use std::str::FromStr;
 #
 use proc_macro_roids::{DeriveInputStructExt, FieldsExt};
@@ -368,9 +368,7 @@ Licensed under either of
 
 at your option.
 
+
 ### Contribution
 
-Unless you explicitly state otherwise, any contribution intentionally
-submitted for inclusion in the work by you, as defined in the Apache-2.0
-license, shall be dual licensed as above, without any additional terms or
-conditions.
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.
